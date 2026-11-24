@@ -4,14 +4,14 @@ Este documento define el flujo de ramas, registro de cambios y versionamiento Se
 
 ---
 
-## 1. Flujo de Ramas (Una Rama por Bloque de Cambios)
+## 1. Flujo Automático de Ramas y Commits (Una Rama por Bloque de Cambios)
 
 - **`main` es la rama protegida de integración:** no se realizan desarrollos directos sobre `main`.
-- Para cada oleada, funcionalidad, corrección o bloque documental, crea una rama nueva desde `main`:
-  - `feat/<bloque>` (ej. `feat/wave-1-structure-and-contracts`, `feat/wave-2-templates-core`)
+- **Al iniciar un bloque:** sincroniza `main` (`git checkout main && git pull origin main`) y crea automáticamente una rama nueva descriptiva antes de modificar archivos:
+  - `feat/<bloque>` (ej. `feat/wave-1-structure-and-contracts`, `feat/wave-2-templates-and-core-cli`)
   - `fix/<correccion>` (ej. `fix/windowing-schema-regex`)
   - `chore/<mantenimiento>` (ej. `chore/ci-release-pipeline`)
-- Utiliza mensajes de commit descriptivos bajo *Conventional Commits* (`feat(...)`, `fix(...)`, `chore(...)`, `docs(...)`).
+- **Al cerrar el bloque:** tras pasar pruebas unitarias y `python scripts/bump_version.py --check`, actualiza `CHANGELOG.md` y realiza el `git commit` local en la rama del bloque usando *Conventional Commits* (`feat(...)`, `fix(...)`, `chore(...)`, `docs(...)`). El `git push` y la apertura de Pull Request se ejecutan únicamente cuando el responsable del repositorio lo solicite.
 
 ---
 
