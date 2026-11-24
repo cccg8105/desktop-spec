@@ -1,6 +1,6 @@
 # Arquitectura Base — desktop-spec
 
-Este documento define los **componentes principales** de `desktop-spec`, los ecosistemas nativos priorizados para `v0.1.0 -> v1.0.0`, la **frontera estricta entre `UF-*` y `UC-*`**, y la matriz de adaptación respecto a `backend-spec` y `frontend-spec`.
+Este documento define los **componentes principales** de `desktop-spec`, los ecosistemas nativos priorizados para `v0.1.0 -> v1.0.0`, la **frontera estricta entre `UF-*` y `UC-*`**, y los límites explícitos de alcance del framework.
 
 ---
 
@@ -9,7 +9,7 @@ Este documento define los **componentes principales** de `desktop-spec`, los eco
 1. **Prioridad Nativa (*Native-First*):** La línea base `v1.0.0` gobierna aplicaciones nativas de proceso único donde la UI, la capa de presentación (MVVM/MVI), el dominio y la persistencia conviven en un mismo binario/paquete. Shells híbridos con WebView (Electron, Tauri, Wails) se reservan para una fase posterior (`v1.1+`) sin contaminar los contratos nativos iniciales.
 2. **Especialización Desktop (*Standalone / Local-First*):** El framework cubre aplicaciones autocontenidas sin servidor backend propio ni sincronización cloud distribuida (alcance reservado para un futuro framework full-stack).
 3. **Monolito Modular con Fronteras Verificables:** El mayor riesgo técnico en desktop no es la latencia de red, sino la erosión arquitectónica interna (vistas llamando directo a SQL o módulos acoplándose a internos ajenos). `desktop-spec` trata los **Módulos de Dominio** y sus **fachadas públicas** como ciudadanos de primera clase.
-4. **Heredabilidad del Meta-Framework:** Se conservan los 5 pilares transversales comunes a `backend-spec` y `frontend-spec`:
+4. **Pilares Transversales de Gobernanza:** El framework se apoya en 5 pilares deterministas:
    - Fuente Única de Verdad (`docs/`) separada de los moldes del agente (`.spec/templates/`).
    - Protocolo Gatekeeper de Dos Velocidades (`MAJOR`/`MINOR` Carril Completo vs. `PATCH` Fast-Track con `/diagnose`).
    - Guardrails deterministas en Python `>=3.9` stdlib (`schemas/` Draft-07, Rolling Window `<= 3` filas, hook `pre-commit --staged`, `check --security` con `gh`).
@@ -71,20 +71,20 @@ En un monolito modular desktop, mantener separados los flujos de interfaz (`docs
 Cada proyecto consumidor mantiene 5 documentos técnicos verificables contra JSON Schema Draft-07:
 
 1. **`tech-stack.md`:** Ecosistema nativo (`wpf`, `avalonia`, `pyside6`, `compose-desktop`, `qt-cpp`, `rust-native`, etc.), toolkit UI, BD embebida, OS Keyring, suite de pruebas unitarias y UI headless, **Presupuestos Desktop** (`cold_startup_ms`, `idle_ram_mb`, `ui_frame_budget_ms <= 16`, `installer_max_mb`) y políticas de seguridad local (deserialización segura, prevención de *Path Traversal*, prohibición de secretos hardcodeados en binario).
-2. **`modular-architecture.md`:** Sustituye y unifica `component-design` y `component-hierarchy` alrededor del **Monolito Modular**:
+2. **`modular-architecture.md`:** Define la estructura del **Monolito Modular**:
    - Mapa de **Módulos de Dominio** (`MOD-*`), sus fachadas/puertos públicos y reglas de dependencia acíclica (prohibición de imports cruzados entre internos de módulos).
    - Capas por módulo (`Presentation/ViewModel`, `Application/UseCases`, `Domain`, `Infrastructure`).
    - **Event Bus en memoria** para desacoplar módulos sin red HTTP.
    - Modelo de concurrencia **UI Thread vs. Background Workers** (`CancellationToken` / corrutinas / `QThread` / `tokio`).
-3. **`windowing-and-os-contracts.md`:** Sustituye `routing-and-rendering` y `api-contracts` web:
+3. **`windowing-and-os-contracts.md`:** Especifica la gestión de ventanas e integraciones nativas del sistema operativo:
    - Topología de ventanas (Single-Window vs. Multi-Window, diálogos modales/no modales, *System Tray*, política *Single-Instance Lock*).
    - Mapa de comandos globales, menús nativos, atajos de teclado y guardia de cierre (`unsaved-changes guard`).
    - Contratos con el SO: diálogos de archivos, *Drag & Drop*, asociaciones de extensión (`.ext`), argumentos CLI, *Deep Links* locales y permisos/capacidades del SO.
-4. **`local-persistence.md`:** Evolución de `database-model`:
+4. **`local-persistence.md`:** Documenta el almacenamiento local y ciclo de migraciones:
    - Esquema relacional/documental embebido (SQLite/WAL/SQLCipher, DuckDB, archivos de proyecto) con diagrama `erDiagram`.
    - Rutas estándar del SO (`%APPDATA%`, `~/Library/Application Support`, `$XDG_DATA_HOME`) separando datos, caché y logs rotativos.
    - Política obligatoria de **migraciones automáticas *on-startup***: idempotencia, **snapshot/backup previo del `.db`**, y verificación de compatibilidad `schema_version` ante archivos creados por versiones futuras.
-5. **`packaging-and-release.md`:** Sustituye `deployment-strategy` web/contenedor:
+5. **`packaging-and-release.md`:** Gobierna la construcción multiplataforma y distribución del binario:
    - Pipeline CI en matriz multi-SO (`windows-latest`, `macos-latest`, `ubuntu-latest`).
    - Empaquetado nativo (`MSIX`/`WiX`/`InnoSetup`, `.dmg`/`.pkg`, `AppImage`/Flatpak/DEB).
    - **Code Signing & Notarization** (certificados en `secrets.*`, nunca versionados), generación de hashes SHA-256, canales de actualización (`stable`/`beta`), **Auto-Updater** y recuperación local ante fallos.
@@ -101,17 +101,17 @@ Cada proyecto consumidor mantiene 5 documentos técnicos verificables contra JSO
 ### Componente 5 — Motor CLI Determinista (`cli/desktop_spec/`)
 - Paquete Python `>=3.9` sin dependencias externas (`stdlib`), instalable vía `uv`/`pipx`/`hatchling` con binarios `desktop-spec` y `dspec`.
 - **7 subcomandos:** `init`, `update`, `bootstrap`, `req:new`, `sync`, `check`, `resolve`.
-- **Diferencias clave respecto a `backend-spec` / `frontend-spec`:**
-  - `req:new` soporta `--uc`, `--uf` o ambos (`--scope {ui,domain,fullstack-module}`), y asigna artefactos según el ecosistema nativo (`View` + `ViewModel` + `UseCase` + Tests).
+- **Capacidades especializadas para escritorio nativo:**
+  - `req:new` soporta `--uc`, `--uf` o ambos (`--scope {ui-only,domain-only,full-module,packaging-infra}`), y asigna artefactos según el ecosistema nativo (`View` + `ViewModel` + `UseCase` + Tests).
   - `check` valida consistencia entre `UF-*` -> `UC-*` (verificando que `invokes_use_case` exista y que las fronteras de módulo no se violen en `--staged`), además de extensiones nativas (`.cs`, `.xaml`, `.py`, `.kt`, `.java`, `.rs`, `.cpp`, `.hpp`, `.h`, `.qml`, `.ui`, `.axaml`).
   - `bootstrap` inventaría módulos/paquetes del monolito, ventanas/vistas, ViewModels, modelos/migraciones locales y archivos de build/signing.
 
 ---
 
-## 5. Qué Aplica y Qué Se Excluye de los Frameworks Existentes
+## 5. Fronteras Explícitas de Alcance (`v1.0.0`)
 
-| Origen | Qué SÍ se hereda | Qué NO aplica y se excluye |
+| Dimensión | Incluido en `desktop-spec` (`v1.0.0`) | Fuera de Alcance (Excluido por Diseño) |
 | :--- | :--- | :--- |
-| **Núcleo Común** | Dos Velocidades, `pending.md`/`changelog.md`/`audit-proposals.md`, Rolling Window (`<= 3`), Draft-07 sin deps, `--staged`, `--security` (`gh`), `--refresh-stack`, `--ci github`, Graphify, Multi-Harness. | Dependencia de Node/npm como único runtime de desarrollo del CLI. |
-| **`backend-spec`** | Clean/Hexagonal, Casos de Uso `UC-*` + OCL heurístico, `erDiagram` y migraciones, pruebas *Spec-First* de dominio/BD, extractor multi-manifiesto (`xml`, `toml`, `gradle`, `cfg`). | Dockerfiles multi-stage, Kubernetes probes (`/health/live`, `/health/ready`), rollout `canary`/`blue_green`, endpoints REST/gRPC obligatorios, RFC 7807 HTTP, Rate Limiting, RBAC multi-tenant, Kafka/Redis/DLQ. |
-| **`frontend-spec`** | Flujos `UF-*` + Matriz FSM (`NoDoubleSubmit`, `PreserveDraftOnError`, `FocusRestoration`), Design Tokens claro/oscuro + W3C DTCG, Anti-AI Slop adaptado a densidad desktop. | Web Vitals (`LCP`, `INP`, `CLS`), `bundle_max_kb`, SEO, SSR/SSG/ISR/RSC, Mobile-First (`390x844`), `Cache-Control` CDN, `VITE_*`/`NEXT_PUBLIC_*`, `axe-core` DOM obligatorio, Playwright web, MSW HTTP obligatorio. |
+| **Gobernanza y Runtime CLI** | Dos Velocidades, `pending.md`/`changelog.md`/`audit-proposals.md`, Rolling Window (`<= 3`), Draft-07 sin deps, `--staged`, `--security` (`gh`), `--refresh-stack`, `--ci github`, Graphify, Multi-Harness y runtime puro en Python `>=3.9` stdlib. | Dependencias de terceros en el motor CLI o requerimiento de runtimes web (Node/npm) para operar la gobernanza. |
+| **Dominio y Persistencia** | Monolito modular Clean/Hexagonal, Casos de Uso `UC-*` + OCL heurístico, `erDiagram` y migraciones *on-startup*, pruebas *Spec-First* de dominio/BD, extractor multi-manifiesto (`xml`, `toml`, `gradle`, `cfg`, `cmake`, `plain`, `json`). | Infraestructura de servidores remotos: Dockerfiles multi-stage, Kubernetes probes (`/health/live`, `/health/ready`), rollout `canary`/`blue_green`, endpoints REST/gRPC obligatorios, RFC 7807 HTTP, Rate Limiting, RBAC multi-tenant, Kafka/Redis/DLQ. |
+| **Interfaz y Experiencia Nativa** | Flujos `UF-*` + Matriz FSM (`NoDoubleSubmit`, `PreserveDraftOnError`, `FocusRestoration`, `NoMainThreadBlock`, `GuardUnsavedChangesOnClose`), Design Tokens claro/oscuro/alto-contraste + W3C DTCG, densidad desktop y accesibilidad OS nativa. | Métricas y artefactos exclusivos web: Web Vitals (`LCP`, `INP`, `CLS`), `bundle_max_kb`, SEO, SSR/SSG/ISR/RSC, Mobile-First (`390x844`), `Cache-Control` CDN, `VITE_*`/`NEXT_PUBLIC_*`, `axe-core` DOM, Playwright web o MSW HTTP. |
