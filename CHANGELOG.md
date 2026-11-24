@@ -22,6 +22,8 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/
 - Plan iterativo en fases y estrategia de ejecución paralela multi-agente (`/teamwork`) en `ROADMAP.md`.
 - Contratos formales de Fase 1 (`Wave 1`): 9 esquemas JSON Schema Draft-07 sin dependencias externas (`requirement`, `use-case`, `user-flow`, `design/tokens-and-themes`, `technical/{tech-stack,modular-architecture,windowing-and-os-contracts,local-persistence,packaging-and-release}`), plantilla `templates/.spec/config.yaml` y 4 guías normativas (`functional-boundary-guidelines.md`, `ocl-guidelines.md`, `ui-contracts-guidelines.md`, `design-guidelines.md`).
 - Gobernanza propia del repositorio: regla de rama nueva por bloque de cambios en `.gemini/rules/repo-workflow.md` y `CONTRIBUTING.md`, junto con validador/actualizador atómico SemVer en `scripts/bump_version.py`.
+- Activos de Fase 2 (`Wave 2`): documentos base en `templates/.spec/docs/` (`functional/`, `design/`, `technical/`, `backlog/`), 11 blueprints ejecutables en `templates/.spec/templates/`, protocolo agnóstico en `agent-prompts/`, 5 skills bajo `templates/.spec/skills/`, adaptadores `harnesses/` (`antigravity`, `claude`, `cursor`, `windsurf`) con marcadores `DESKTOP-SPEC:START/END`, comandos `/desk-*`, hook `pre-commit` y workflow CI opt-in `desktop-spec-check.yml`.
+- Núcleo CLI de Fase 3 parte 1 (`Wave 2`): `cli/desktop_spec/common.py`, detectores para los 11 ecosistemas nativos y extractor/actualizador de versiones (`xml`, `toml`, `gradle`, `cfg`, `cmake`, `plain`, `json`) en `cli/desktop_spec/detector/`, validador Draft-07 `stdlib` con extractores Markdown y exportación/validación W3C DTCG en `cli/desktop_spec/validator/schema_validator.py`, más 30 pruebas unitarias en `cli/tests/`.
 
 ---
 

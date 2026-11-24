@@ -1,0 +1,23 @@
+<!-- DESKTOP-SPEC:START -->
+# desktop-spec — Reglas Operativas para Windsurf (Cascade)
+
+> Bloque gestionado por `desktop-spec`. No edites dentro de `DESKTOP-SPEC:START` / `DESKTOP-SPEC:END`.
+
+## 1. Gatekeeper de Dos Velocidades
+- **PROHIBIDO** alterar codigo fuente (`src/`, `app/`, `modules/`, `views/`, `ui/`, `tests/`) sin un `REQ-DESK-*` activo en `docs/backlog/pending.md` aprobado por el usuario.
+- **Carril Completo (`MAJOR` / `MINOR`):** Ejecuta el workflow `/desk-grill` -> `/desk-plan` -> revision y aprobacion del usuario -> `/desk-execute`. Exige frontera `UF-*` -> `UC-*` (`functional-boundary-guidelines.md`), Matriz FSM (`ui-contracts-guidelines.md`), OCL (`ocl-guidelines.md`), tokens simetricos, arquitectura modular `MOD-*`, contratos `WIN-*`/persistencia y test *Spec-First*.
+- **Fast-Track (`PATCH`):** Usa `Referencia Funcional: N/A (PATCH / Fast-Track)` para fixes locales sin cambio de contratos ni esquemas; diagnostica con `/diagnose`, reproduce primero el fallo con test en rojo y solicita confirmacion breve.
+
+## 2. Estandares Desktop, Fronteras y Preguntas
+- **Contexto O(1):** Consulta `docs/functional/index.md`, `docs/design/index.md`, `docs/technical/index.md` y `graphify-out/` (si existe) antes de explorar codigo masivamente.
+- **Entrevista por Pausa Estructurada:** Aplica *"Codigo, Modulos y Esquemas primero, humano despues"* y presenta de 2 a 4 decisiones en el chat usando opciones `A) (Recomendado) / B) / C)` esperando respuesta antes de especificar.
+- **Frontera `UF-*` vs `UC-*` y Monolito Modular:** `UF-*` gobierna ventanas, atajos, estados UI, accesibilidad nativa e invariantes (`NoDoubleSubmit`, `PreserveDraftOnError`, `FocusRestoration`, `NoMainThreadBlock`, `GuardUnsavedChangesOnClose`) y delega via `invokes_use_case`. `UC-*` gobierna dominio y persistencia local sin controles visuales. Prohibido cruzar fronteras de modulos `MOD-*` o acceder a SQLite desde vistas UI.
+- **Tokens Simetricos:** Usa unicamente `docs/design/tokens-and-themes.md` (`light`, `dark`, `system`, `high-contrast` y densidad desktop). Cero valores visuales quemados.
+
+## 3. Seguridad, Brownfield Just-In-Time y Cierre
+- **Fronteras y Auditoria:** Modifica exclusivamente archivos declarados en `docs/backlog/pending.md`. Manten `docs/backlog/audit-proposals.md` (`[AUDIT-DESK-*]`) como solo lectura salvo promocion explicita.
+- **Brownfield *Just-In-Time*:** Documenta el comportamiento *As-Is* antes de cambiar modulos legados en `docs/functional/index.md`; utiliza `/desk-bootstrap` en proyectos existentes.
+- **Seguridad Local y Dependabot (`gh` CLI):** Exige OS Keyring para secretos, canonizacion contra Path Traversal y deserializacion segura. Ante alertas de vulnerabilidades en paquetes, verifica `gh auth status`, diagnostica con `gh api "repos/{owner}/{repo}/dependabot/alerts?state=open"` (`gh pr list --author "app/dependabot"` y auditor local `dotnet list package --vulnerable`, `pip-audit`, `cargo audit`, `gradle`). Tramita parches compatibles por **Fast-Track (`PATCH`)** bajo `REQ-DESK-SEC-*` y valida con `dspec check --security`; escala upgrades `MAJOR` con cambios en codigo fuente a `/desk-plan`.
+- **Verificacion, `/code-review` y Graphify:** Valida tests de arquitectura, dominio/BD y UI headless, realiza `/code-review` del diff, conserva maximo 3 filas en *Rolling Window* y corre `graphify update` respetando `.graphifyignore`.
+- **Empaquetado y Releases (`desktop-release`):** Para matriz CI multi-SO (`windows-latest`, `macos-latest`, `ubuntu-latest`), Code Signing & Notarization (`secrets.*` nunca en repo/binario), canales `beta`/`stable` y Auto-Updater, activa `.windsurf/skills/desktop-release/SKILL.md` (auditoria previa con `gh variable list` / `gh secret list`).
+<!-- DESKTOP-SPEC:END -->

@@ -7,10 +7,11 @@ description: "Reglas de gobernanza del propio repositorio desktop-spec: rama nue
 
 Estas reglas aplican a cualquier agente de IA o colaborador que modifique el repositorio del framework `desktop-spec`:
 
-1. **Rama Nueva Obligatoria por Bloque de Cambios:**
-   - **Prohibido** commitear bloques nuevos de trabajo directamente sobre `main`.
-   - Antes de iniciar una oleada, funcionalidad, corrección o cambio estructural, crea una rama nueva descriptiva desde `main` (por ejemplo: `feat/wave-2-templates-and-cli`, `fix/schema-validator-edge-case`, `chore/repo-governance`).
-   - Mantén cada rama acotada a un bloque coherente de cambios listo para revisión o merge hacia `main`.
+1. **Ciclo Git Automático por Bloque de Cambios:**
+   - **Prohibido** editar o commitear bloques nuevos de trabajo directamente sobre `main`.
+   - **Al iniciar un bloque de cambios (automático, sin esperar recordatorio):** antes de crear o editar el primer archivo, sincroniza `main` (`git checkout main` y `git pull origin main` si hay remoto) y crea automáticamente una rama nueva descriptiva (`feat/wave-N-...`, `fix/...`, `chore/...`) desde `main`.
+   - **Al cerrar el bloque de cambios (automático tras verificar):** una vez pasadas todas las pruebas (`unittest`), auditorías y `python scripts/bump_version.py --check`, actualiza `CHANGELOG.md` (`## [Unreleased]`) y realiza automáticamente el `git add` + `git commit` local en esa rama con *Conventional Commits*.
+   - **Publicación (`git push` / Pull Request):** no ejecutes `git push` ni abras PR automáticamente; espera indicación explícita del usuario para publicar hacia GitHub.
 
 2. **Actualización Obligatoria de `CHANGELOG.md`:**
    - Todo bloque de cambios debe registrar sus modificaciones bajo `## [Unreleased]` en `CHANGELOG.md` siguiendo *Keep a Changelog* (`Added`, `Changed`, `Fixed`, `Removed`).
