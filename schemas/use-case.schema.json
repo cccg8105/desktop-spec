@@ -1,0 +1,152 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "UseCaseSpecification",
+  "description": "Esquema formal para la validacion de especificaciones de casos de uso de dominio en docs/functional/use-cases/UC-*.md",
+  "type": "object",
+  "required": [
+    "id",
+    "title",
+    "module",
+    "actor",
+    "status",
+    "trigger",
+    "process_diagram_mermaid",
+    "inputs",
+    "outputs",
+    "business_rules"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^UC-[A-Z0-9]+-[0-9]{3,}$",
+      "description": "Identificador unico con formato UC-[MODULO]-[NUMERO] (ej. UC-CATALOG-001)"
+    },
+    "title": {
+      "type": "string",
+      "minLength": 5
+    },
+    "module": {
+      "type": "string",
+      "minLength": 2,
+      "description": "Modulo de dominio del monolito modular al que pertenece el caso de uso (ej. core, catalog, billing, sync)"
+    },
+    "actor": {
+      "type": "string",
+      "minLength": 2,
+      "description": "Actor local, worker en segundo plano o modulo invocador dentro del proceso nativo"
+    },
+    "status": {
+      "type": "string",
+      "enum": ["Borrador", "Activo", "As-Is (Brownfield)", "Deprecado"]
+    },
+    "ocl_applied": {
+      "type": "boolean"
+    },
+    "trigger": {
+      "type": "string",
+      "minLength": 3,
+      "description": "Comando de aplicacion, evento de dominio interno o programacion local que inicia el caso de uso"
+    },
+    "preconditions": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "process_diagram_mermaid": {
+      "type": "string",
+      "minLength": 10,
+      "description": "Bloque de diagrama de flujo o secuencia de dominio en sintaxis Mermaid"
+    },
+    "inputs": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "type", "required"],
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          },
+          "required": {
+            "type": "boolean"
+          },
+          "validation": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "outputs": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "type"],
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "business_rules": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "description"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^BR-[0-9]{2,}$"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "ocl_contract": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "side_effects": {
+      "type": "object",
+      "properties": {
+        "local_database": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "local_files": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "os_keyring": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "internal_domain_events": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,141 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "DesktopPackagingAndReleaseSpecification",
+  "description": "Esquema formal para docs/technical/packaging-and-release.md (matriz multi-SO, instaladores nativos, firma/notarizacion y auto-update)",
+  "type": "object",
+  "required": [
+    "artifact_type",
+    "target_platforms",
+    "branching_model",
+    "pipeline_diagram_mermaid",
+    "packaging_formats",
+    "signing_and_notarization",
+    "auto_update",
+    "build_env_vars"
+  ],
+  "properties": {
+    "artifact_type": {
+      "type": "string",
+      "enum": ["packaging-and-release"]
+    },
+    "target_platforms": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": ["windows", "macos", "linux"]
+      }
+    },
+    "branching_model": {
+      "type": "string",
+      "enum": ["trunk-based", "github-flow", "gitflow"]
+    },
+    "pipeline_diagram_mermaid": {
+      "type": "string",
+      "minLength": 10,
+      "description": "Diagrama de flujo del pipeline CI/CD multi-SO en sintaxis Mermaid flowchart"
+    },
+    "packaging_formats": {
+      "type": "object",
+      "properties": {
+        "windows": {
+          "type": "string",
+          "minLength": 2
+        },
+        "macos": {
+          "type": "string",
+          "minLength": 2
+        },
+        "linux": {
+          "type": "string",
+          "minLength": 2
+        }
+      }
+    },
+    "signing_and_notarization": {
+      "type": "object",
+      "required": ["secrets_source"],
+      "properties": {
+        "windows_authenticode": {
+          "type": "string",
+          "minLength": 2
+        },
+        "macos_notarization": {
+          "type": "string",
+          "minLength": 2
+        },
+        "linux_signing": {
+          "type": "string",
+          "minLength": 2
+        },
+        "secrets_source": {
+          "type": "string",
+          "minLength": 3,
+          "description": "Origen seguro de certificados y llaves de firma en CI (ej. github_secret / OIDC)"
+        }
+      }
+    },
+    "auto_update": {
+      "type": "object",
+      "required": [
+        "strategy",
+        "channels",
+        "checksum_verification"
+      ],
+      "properties": {
+        "strategy": {
+          "type": "string",
+          "minLength": 2
+        },
+        "channels": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 2
+          }
+        },
+        "checksum_verification": {
+          "type": "string",
+          "minLength": 3
+        }
+      }
+    },
+    "build_env_vars": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "description", "is_secret"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 2
+          },
+          "description": {
+            "type": "string",
+            "minLength": 3
+          },
+          "is_secret": {
+            "type": "boolean"
+          },
+          "required": {
+            "type": "boolean"
+          },
+          "ci_source": {
+            "type": "string",
+            "enum": ["github_var", "github_secret", "vault", "local_env", "runtime_env"]
+          },
+          "environments": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": ["local", "ci", "beta", "stable"]
+            }
+          }
+        }
+      }
+    },
+    "release_recovery_policy": {
+      "type": "string",
+      "minLength": 5
+    }
+  }
+}

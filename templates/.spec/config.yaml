@@ -1,0 +1,49 @@
+# ==============================================================================
+# desktop-spec v0.1.0 - Configuracion del Proyecto (Monolito Modular Nativo)
+# ==============================================================================
+
+framework: desktop-spec
+version: "0.1.0"
+project_name: "{{PROJECT_NAME}}"
+
+# Perfil de ecosistema desktop nativo detectado o seleccionado en init
+ecosystem:
+  name: "{{ECOSYSTEM_NAME}}" # wpf | winui3 | avalonia | maui-desktop | pyside6 | pyqt6 | flet | compose-desktop | javafx | rust-native | qt-cpp
+  family: "{{ECOSYSTEM_FAMILY}}" # dotnet | python | jvm | rust-cpp
+  ui_toolkit: "{{UI_TOOLKIT}}"
+  language: "{{LANGUAGE_NAME}}"
+  embedded_db: "{{EMBEDDED_DB}}"
+  unit_test_runner: "{{UNIT_TEST_RUNNER}}"
+  ui_test_runner: "{{UI_TEST_RUNNER}}"
+  manifest_file: "{{MANIFEST_FILE}}"
+  src_dir: "{{SRC_DIR}}"
+  ui_dir: "{{UI_DIR}}"
+  modules_dir: "{{MODULES_DIR}}"
+  test_pattern: "{{TEST_PATTERN}}"
+
+# Estrategia de versionamiento del proyecto consumidor: semver | calver | sequential
+versioning_scheme: "{{VERSIONING_SCHEME}}"
+current_version: "{{CURRENT_VERSION}}"
+current_milestone: "{{MILESTONE_VERSION}}"
+
+# Archivo manifiesto del codigo donde se sincroniza la version de la app
+version_file:
+  path: "{{MANIFEST_FILE}}"
+  format: "xml" # xml | toml | gradle | cfg | cmake | plain | json
+  field: "version"
+
+# Modulos de dominio del monolito modular
+modules:
+  - core
+
+harnesses:
+  - antigravity
+
+# Rutas estandar del framework
+paths:
+  user_flows_docs: "docs/functional/user-flows"
+  use_cases_docs: "docs/functional/use-cases"
+  design_docs: "docs/design"
+  technical_docs: "docs/technical"
+  backlog: "docs/backlog"
+  templates: ".spec/templates"

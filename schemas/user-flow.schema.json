@@ -1,0 +1,161 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "UserFlowSpecification",
+  "description": "Esquema formal para flujos de interaccion nativos de escritorio en docs/functional/user-flows/UF-*.md",
+  "type": "object",
+  "required": [
+    "id",
+    "title",
+    "module",
+    "actor",
+    "window_target",
+    "entry_trigger",
+    "status",
+    "flow_diagram_mermaid",
+    "ui_states",
+    "accessibility"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^UF-[A-Z0-9]+-[0-9]{3,}$",
+      "description": "Identificador unico UF-[MODULO]-[NUMERO] (ej. UF-CATALOG-001)"
+    },
+    "title": {
+      "type": "string",
+      "minLength": 5
+    },
+    "module": {
+      "type": "string",
+      "minLength": 2,
+      "description": "Modulo funcional al que pertenece el flujo de interaccion"
+    },
+    "actor": {
+      "type": "string",
+      "minLength": 2
+    },
+    "window_target": {
+      "type": "string",
+      "minLength": 2,
+      "description": "Ventana principal, dialogo modal, panel o vista destino (ej. WIN-MAIN-001, MainWindow, ExportDialog)"
+    },
+    "entry_trigger": {
+      "type": "string",
+      "minLength": 2,
+      "description": "Accion inicial en interfaz o entrada del sistema operativo (ej. menu Archivo -> Exportar, Ctrl+E, drag-and-drop)"
+    },
+    "status": {
+      "type": "string",
+      "enum": ["Borrador", "Activo", "As-Is (Brownfield)", "Deprecado"]
+    },
+    "invokes_use_case": {
+      "type": "string",
+      "pattern": "^(UC-[A-Z0-9]+-[0-9]{3,}|N/A)$",
+      "description": "Identificador del caso de uso de dominio al que delega este flujo, o N/A si es puramente presentacional"
+    },
+    "shortcut": {
+      "type": "string",
+      "description": "Atajo de teclado multiplataforma asignado al flujo (ej. Ctrl+S / Cmd+S, o N/A)"
+    },
+    "fsm_required": {
+      "type": "boolean"
+    },
+    "window_geometry": {
+      "type": "object",
+      "required": ["min_width_px", "min_height_px", "resizable"],
+      "properties": {
+        "min_width_px": {
+          "type": "integer"
+        },
+        "min_height_px": {
+          "type": "integer"
+        },
+        "resizable": {
+          "type": "boolean"
+        }
+      }
+    },
+    "flow_diagram_mermaid": {
+      "type": "string",
+      "minLength": 10
+    },
+    "user_inputs": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "type", "required"],
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          },
+          "required": {
+            "type": "boolean"
+          },
+          "validation": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "visual_outputs": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["element", "condition", "behavior"],
+        "properties": {
+          "element": {
+            "type": "string"
+          },
+          "condition": {
+            "type": "string"
+          },
+          "behavior": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "ui_states": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["state", "trigger", "feedback"],
+        "properties": {
+          "state": {
+            "type": "string"
+          },
+          "trigger": {
+            "type": "string"
+          },
+          "feedback": {
+            "type": "string"
+          },
+          "recovery": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "accessibility": {
+      "type": "object",
+      "required": ["focus_management", "os_accessibility_roles", "keyboard_navigation"],
+      "properties": {
+        "focus_management": {
+          "type": "string",
+          "minLength": 5
+        },
+        "os_accessibility_roles": {
+          "type": "string",
+          "minLength": 5
+        },
+        "keyboard_navigation": {
+          "type": "string",
+          "minLength": 5
+        }
+      }
+    }
+  }
+}

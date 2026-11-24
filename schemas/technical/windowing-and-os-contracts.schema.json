@@ -1,0 +1,161 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "DesktopWindowingAndOsContractsSpecification",
+  "description": "Esquema formal para docs/technical/windowing-and-os-contracts.md (ventanas WIN-*, ciclo de vida, atajos e integracion con el SO)",
+  "type": "object",
+  "required": [
+    "artifact_type",
+    "window_topology",
+    "single_instance_policy",
+    "windows",
+    "global_shortcuts",
+    "os_integrations"
+  ],
+  "properties": {
+    "artifact_type": {
+      "type": "string",
+      "enum": ["windowing-and-os-contracts"]
+    },
+    "window_topology": {
+      "type": "string",
+      "enum": ["single-window", "multi-window", "mdi-tabs", "tray-resident"]
+    },
+    "single_instance_policy": {
+      "type": "object",
+      "required": [
+        "enabled",
+        "secondary_launch_behavior"
+      ],
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "secondary_launch_behavior": {
+          "type": "string",
+          "minLength": 3
+        },
+        "ipc_mechanism": {
+          "type": "string"
+        }
+      }
+    },
+    "windows": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "min_width_px",
+          "min_height_px",
+          "unsaved_changes_guard",
+          "close_behavior"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^WIN-[A-Z0-9]+-[0-9]{3,}$",
+            "description": "Identificador unico de ventana o dialogo (ej. WIN-MAIN-001)"
+          },
+          "name": {
+            "type": "string",
+            "minLength": 2
+          },
+          "user_flow_id": {
+            "type": "string",
+            "pattern": "^(UF-[A-Z0-9]+-[0-9]{3,}|N/A)$"
+          },
+          "window_role": {
+            "type": "string",
+            "enum": ["main", "secondary", "modal-dialog", "non-modal-tool", "tray-popover"]
+          },
+          "min_width_px": {
+            "type": "integer"
+          },
+          "min_height_px": {
+            "type": "integer"
+          },
+          "unsaved_changes_guard": {
+            "type": "boolean"
+          },
+          "close_behavior": {
+            "type": "string",
+            "minLength": 2
+          }
+        }
+      }
+    },
+    "global_shortcuts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "action",
+          "shortcut_win_linux",
+          "shortcut_macos",
+          "scope"
+        ],
+        "properties": {
+          "action": {
+            "type": "string",
+            "minLength": 2
+          },
+          "shortcut_win_linux": {
+            "type": "string",
+            "minLength": 1
+          },
+          "shortcut_macos": {
+            "type": "string",
+            "minLength": 1
+          },
+          "scope": {
+            "type": "string",
+            "minLength": 2
+          }
+        }
+      }
+    },
+    "os_integrations": {
+      "type": "object",
+      "required": [
+        "file_dialogs",
+        "drag_and_drop",
+        "file_associations",
+        "deep_links",
+        "cli_arguments",
+        "system_tray",
+        "os_permissions"
+      ],
+      "properties": {
+        "file_dialogs": {
+          "type": "string",
+          "minLength": 2
+        },
+        "drag_and_drop": {
+          "type": "string",
+          "minLength": 2
+        },
+        "file_associations": {
+          "type": "string",
+          "minLength": 2
+        },
+        "deep_links": {
+          "type": "string",
+          "minLength": 2
+        },
+        "cli_arguments": {
+          "type": "string",
+          "minLength": 2
+        },
+        "system_tray": {
+          "type": "string",
+          "minLength": 2
+        },
+        "os_permissions": {
+          "type": "string",
+          "minLength": 2
+        }
+      }
+    }
+  }
+}

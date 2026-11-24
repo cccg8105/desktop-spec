@@ -1,0 +1,167 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "DesignTokensAndThemesSpecification",
+  "description": "Esquema formal para docs/design/tokens-and-themes.md en aplicaciones de escritorio nativas con temas del SO y densidad desktop",
+  "type": "object",
+  "required": [
+    "artifact_type",
+    "theme_modes",
+    "density_modes",
+    "semantic_colors",
+    "typography"
+  ],
+  "properties": {
+    "artifact_type": {
+      "type": "string",
+      "enum": ["design-tokens"]
+    },
+    "theme_modes": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": ["light", "dark", "system", "high-contrast"]
+      }
+    },
+    "density_modes": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": ["compact", "standard", "comfortable"]
+      }
+    },
+    "semantic_colors": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["token", "light_hex", "dark_hex", "role"],
+        "properties": {
+          "token": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]*$"
+          },
+          "light_hex": {
+            "type": "string",
+            "pattern": "^#[0-9A-Fa-f]{6}$"
+          },
+          "dark_hex": {
+            "type": "string",
+            "pattern": "^#[0-9A-Fa-f]{6}$"
+          },
+          "high_contrast_hex": {
+            "type": ["string", "null"],
+            "pattern": "^#[0-9A-Fa-f]{6}$"
+          },
+          "role": {
+            "type": "string",
+            "minLength": 3
+          },
+          "contrast_ratio": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "typography": {
+      "type": "object",
+      "required": ["display_font", "ui_font", "mono_font"],
+      "properties": {
+        "display_font": {
+          "type": "string",
+          "minLength": 2
+        },
+        "ui_font": {
+          "type": "string",
+          "minLength": 2
+        },
+        "mono_font": {
+          "type": "string",
+          "minLength": 2
+        },
+        "scale": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "spacing": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["token", "value"],
+        "properties": {
+          "token": {
+            "type": "string",
+            "minLength": 1
+          },
+          "value": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    "radii": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["token", "value"],
+        "properties": {
+          "token": {
+            "type": "string",
+            "minLength": 1
+          },
+          "value": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    "elevation": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["token", "value"],
+        "properties": {
+          "token": {
+            "type": "string",
+            "minLength": 1
+          },
+          "value": {
+            "type": "string",
+            "minLength": 1
+          },
+          "description": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "window_chrome": {
+      "type": "object",
+      "required": ["titlebar_style", "backdrop_material"],
+      "properties": {
+        "titlebar_style": {
+          "type": "string",
+          "enum": ["native", "custom-integrated", "borderless"]
+        },
+        "backdrop_material": {
+          "type": "string",
+          "enum": ["none", "mica", "acrylic", "vibrancy", "solid-surface"]
+        },
+        "titlebar_height_px": {
+          "type": "integer"
+        },
+        "corner_style": {
+          "type": "string",
+          "enum": ["os-default", "rounded", "square"]
+        },
+        "active_border_token": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}

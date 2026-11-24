@@ -1,0 +1,138 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "DesktopTechStackSpecification",
+  "description": "Esquema formal para docs/technical/tech-stack.md con stack nativo, presupuestos desktop y seguridad local",
+  "type": "object",
+  "required": [
+    "artifact_type",
+    "ecosystem",
+    "core",
+    "performance_budgets",
+    "security_policies"
+  ],
+  "properties": {
+    "artifact_type": {
+      "type": "string",
+      "enum": ["tech-stack"]
+    },
+    "ecosystem": {
+      "type": "string",
+      "enum": [
+        "wpf",
+        "winui3",
+        "avalonia",
+        "maui-desktop",
+        "pyside6",
+        "pyqt6",
+        "flet",
+        "compose-desktop",
+        "javafx",
+        "rust-native",
+        "qt-cpp"
+      ]
+    },
+    "core": {
+      "type": "object",
+      "required": [
+        "language_runtime",
+        "ui_toolkit",
+        "architecture_pattern",
+        "embedded_db",
+        "keyring_provider",
+        "unit_test_framework",
+        "ui_test_framework"
+      ],
+      "properties": {
+        "language_runtime": {
+          "type": "string",
+          "minLength": 2
+        },
+        "ui_toolkit": {
+          "type": "string",
+          "minLength": 2
+        },
+        "architecture_pattern": {
+          "type": "string",
+          "minLength": 2
+        },
+        "embedded_db": {
+          "type": "string",
+          "minLength": 2
+        },
+        "keyring_provider": {
+          "type": "string",
+          "minLength": 2
+        },
+        "unit_test_framework": {
+          "type": "string",
+          "minLength": 2
+        },
+        "ui_test_framework": {
+          "type": "string",
+          "minLength": 2
+        }
+      }
+    },
+    "performance_budgets": {
+      "type": "object",
+      "required": [
+        "cold_startup_ms",
+        "idle_ram_mb",
+        "ui_frame_budget_ms",
+        "installer_max_mb"
+      ],
+      "properties": {
+        "cold_startup_ms": {
+          "type": "integer",
+          "description": "Tiempo maximo de arranque en frio en milisegundos"
+        },
+        "idle_ram_mb": {
+          "type": "integer",
+          "description": "Consumo maximo de memoria RAM en reposo en megabytes"
+        },
+        "ui_frame_budget_ms": {
+          "type": "integer",
+          "description": "Presupuesto maximo por frame en el hilo UI en milisegundos (ej. 16)"
+        },
+        "installer_max_mb": {
+          "type": "integer",
+          "description": "Tamano maximo permitido del instalador o paquete nativo en megabytes"
+        }
+      }
+    },
+    "security_policies": {
+      "type": "object",
+      "required": [
+        "local_secrets",
+        "path_traversal",
+        "deserialization",
+        "binary_hardening"
+      ],
+      "properties": {
+        "local_secrets": {
+          "type": "string",
+          "minLength": 5,
+          "description": "Resguardo en OS Keyring y prohibicion de secretos en binario o archivos planos"
+        },
+        "path_traversal": {
+          "type": "string",
+          "minLength": 5,
+          "description": "Canonizacion y validacion de rutas locales al abrir archivos o proyectos"
+        },
+        "deserialization": {
+          "type": "string",
+          "minLength": 5,
+          "description": "Deserializacion segura de archivos de proyecto, configuracion y estado local"
+        },
+        "binary_hardening": {
+          "type": "string",
+          "minLength": 5,
+          "description": "Endurecimiento de compilacion, auditoria de dependencias y verificacion de integridad"
+        },
+        "i18n_policy": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}
