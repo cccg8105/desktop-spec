@@ -1,0 +1,769 @@
+import json
+import re
+import shutil
+import subprocess
+from pathlib import Path
+from typing import Dict, List, Set, Tuple
+
+from desktop_spec.common import read_config_settings
+from desktop_spec.validator.schema_validator import (
+    count_rolling_history_rows,
+    extract_design_tokens_summary,
+    extract_requirement_data,
+    extract_use_case_data,
+    extract_user_flow_data,
+    load_json_schema,
+    parse_yaml_frontmatter,
+    validate_against_schema,
+    validate_w3c_tokens_dict,
+)
+
+DESKTOP_SOURCE_EXTENSIONS = {
+    ".cs",
+    ".xaml",
+    ".axaml",
+    ".py",
+    ".kt",
+    ".kts",
+    ".java",
+    ".fxml",
+    ".rs",
+    ".slint",
+    ".cpp",
+    ".cc",
+    ".cxx",
+    ".hpp",
+    ".h",
+    ".qml",
+    ".ui",
+    ".qrc",
+}
+
+NON_SOURCE_PREFIXES = (
+    "docs/",
+    ".spec/",
+    "tests/",
+    "test/",
+    ".gemini/",
+    ".cursor/",
+    ".claude/",
+    ".windsurf/",
+    ".github/",
+    "assets/",
+    "resources/",
+)
+
+STRICT_TOKEN_UI_EXTS = {
+    ".xaml",
+    ".axaml",
+    ".qml",
+    ".ui",
+    ".qss",
+    ".slint",
+    ".kt",
+    ".py",
+    ".cs",
+    ".rs",
+}
+
+STRICT_TOKEN_SKIP_DIRS = {
+    "node_modules",
+    ".git",
+    "bin",
+    "obj",
+    "target",
+    "build",
+    "dist",
+    ".venv",
+    "venv",
+    "__pycache__",
+    ".gradle",
+    ".idea",
+    ".vs",
+    "out",
+    "tests",
+    "test",
+}
+
+BURNED_HEX_RE = re.compile(r"(?<![0-9A-Za-z_#])#(?:[0-9A-Fa-f]{8}|[0-9A-Fa-f]{6})\b")
+
+EXPECTED_TECHNICAL_DOCS: Tuple[Tuple[str, str, str, str], ...] = (
+    (
+        "modular-architecture.md",
+        "modular-architecture",
+        "technical/modular-architecture.schema.json",
+        "architecture_style",
+    ),
+    (
+        "windowing-and-os-contracts.md",
+        "windowing-and-os-contracts",
+        "technical/windowing-and-os-contracts.schema.json",
+        "window_topology",
+    ),
+    (
+        "local-persistence.md",
+        "local-persistence",
+        "technical/local-persistence.schema.json",
+        "storage_engine",
+    ),
+    (
+        "tech-stack.md",
+        "tech-stack",
+        "technical/tech-stack.schema.json",
+        "ecosystem",
+    ),
+    (
+        "packaging-and-release.md",
+        "packaging-and-release",
+        "technical/packaging-and-release.schema.json",
+        "branching_model",
+    ),
+)
+
+VALID_MERMAID_TYPES = (
+    "flowchart",
+    "sequenceDiagram",
+    "classDiagram",
+    "erDiagram",
+    "stateDiagram",
+    "graph",
+    "gantt",
+    "pie",
+    "journey",
+)
+
+
+def _check_markdown_links(md_file: Path, errors: List[str]) -> None:
+    content = md_file.read_text(encoding="utf-8")
+    stripped = re.sub(r"```.*?```", "", content, flags=re.DOTALL)
+    for label, raw_target in re.findall(r"\[([^\]]+)\]\(([^)]+)\)", stripped):
+        target = raw_target.strip().split()[0]
+        if not target or target.startswith(
+            ("http://", "https://", "mailto:", "#", "file:", "conversation:", "sidecar:")
+        ):
+            continue
+        clean_rel = target.split("#")[0]
+        if not clean_rel or "[" in clean_rel or "{{" in clean_rel:
+            continue
+        resolved = (md_file.parent / clean_rel).resolve()
+        if not resolved.exists():
+            errors.append(
+                f"Enlace roto en '{md_file.name}': [{label}]({raw_target}) -> no existe '{clean_rel}'"
+            )
+
+
+def _is_source_code_path(rel_posix: str) -> bool:
+    if rel_posix.startswith(NON_SOURCE_PREFIXES):
+        return False
+    p = Path(rel_posix)
+    if len(p.parts) == 1:
+        return False
+    return p.suffix.lower() in DESKTOP_SOURCE_EXTENSIONS
+
+
+def scan_burned_hex_tokens(project_root: Path) -> List[str]:
+    """Escanea archivos UI nativos buscando colores hexadecimales quemados fuera de tokens/temas."""
+    cfg = read_config_settings(project_root)
+    findings: List[str] = []
+    seen: Set[Path] = set()
+    candidate_roots = [
+        str(cfg.get("src_dir", "src")),
+        str(cfg.get("ui_dir", "src/Views")),
+        str(cfg.get("modules_dir", "src/Modules")),
+        "src",
+        "app",
+        "ui",
+        "views",
+        "Resources",
+    ]
+    scan_roots: List[str] = []
+    for r in candidate_roots:
+        norm = r.strip().rstrip("/\\")
+        if norm and norm not in scan_roots:
+            scan_roots.append(norm)
+
+    for root_name in scan_roots:
+        base_dir = project_root / root_name
+        if not base_dir.is_dir():
+            continue
+        for file_path in sorted(base_dir.rglob("*")):
+            if file_path in seen or not file_path.is_file():
+                continue
+            seen.add(file_path)
+            if any(part in STRICT_TOKEN_SKIP_DIRS for part in file_path.parts):
+                continue
+            if file_path.suffix.lower() not in STRICT_TOKEN_UI_EXTS:
+                continue
+            low_name = file_path.name.lower()
+            if (
+                low_name.startswith(("tokens", "theme", "colors", "palette"))
+                or "theme" in low_name
+                or "tokens" in low_name
+                or low_name.endswith(".tokens.json")
+                or re.search(r"(\.|_)(test|spec|tests)\.[a-z]+$", low_name)
+                or low_name.startswith("test_")
+            ):
+                continue
+
+            rel = file_path.relative_to(project_root).as_posix()
+            try:
+                lines = file_path.read_text(encoding="utf-8", errors="ignore").splitlines()
+            except Exception:
+                continue
+            for line_no, line in enumerate(lines, 1):
+                stripped = line.strip()
+                if stripped.startswith(("//", "/*", "*", "<!--", "# ")):
+                    continue
+                for match in BURNED_HEX_RE.finditer(line):
+                    findings.append(
+                        f"{rel}:{line_no} contiene color hexadecimal quemado '{match.group(0)}'; "
+                        "usa un semantic design token o recurso del tema."
+                    )
+    return findings
+
+
+def _verify_staged_commits(
+    project_root: Path,
+    cfg: Dict,
+    declared_artifacts: Set[str],
+    declared_modules: Set[str],
+    has_active_reqs: bool,
+    errors: List[str],
+) -> None:
+    try:
+        res = subprocess.run(
+            ["git", "diff", "--cached", "--name-only"],
+            cwd=str(project_root),
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            timeout=10,
+        )
+    except Exception:
+        return
+
+    if res.returncode != 0:
+        return
+
+    staged_files = [
+        line.strip().replace("\\", "/") for line in res.stdout.splitlines() if line.strip()
+    ]
+    if not staged_files:
+        return
+
+    staged_source = [f for f in staged_files if _is_source_code_path(f)]
+    if not staged_source:
+        return
+
+    changelog_staged = "docs/backlog/changelog.md" in staged_files
+    docs_staged = any(f.startswith("docs/") for f in staged_files)
+    if changelog_staged:
+        return
+
+    if not has_active_reqs:
+        errors.append(
+            "Commit fantasma bloqueado: cambios en codigo desktop "
+            f"({', '.join(staged_source[:5])}) sin ningun requerimiento activo en "
+            "docs/backlog/pending.md ni cierre en changelog.md."
+        )
+        return
+
+    undeclared = [f for f in staged_source if f not in declared_artifacts]
+    if undeclared and not docs_staged:
+        errors.append(
+            "Violacion de fronteras (Commit fantasma parcial): los archivos en stage "
+            f"({', '.join(undeclared[:5])}) no figuran en las 'Fronteras y Artefactos' de ningun "
+            "REQ-DESK-* activo en docs/backlog/pending.md."
+        )
+
+    modules_dir = str(cfg.get("modules_dir", "src/Modules")).replace("\\", "/").strip("/")
+    if modules_dir and declared_modules:
+        mod_prefix = modules_dir + "/"
+        for sf in staged_source:
+            if sf.startswith(mod_prefix):
+                rest = sf[len(mod_prefix):]
+                parts = rest.split("/")
+                if len(parts) >= 2:
+                    mod_name = parts[0]
+                    if mod_name.lower() not in {m.lower() for m in declared_modules}:
+                        errors.append(
+                            f"Violacion de fronteras de modulo: '{sf}' modifica el modulo '{mod_name}', "
+                            "el cual no figura en 'Modulos Afectados' de ningun REQ-DESK-* activo."
+                        )
+
+
+def _validate_functional_docs(
+    docs_dir: Path,
+    uf_schema: Dict,
+    uc_schema: Dict,
+    errors: List[str],
+    warnings: List[str],
+) -> None:
+    func_dir = docs_dir / "functional"
+    func_index = func_dir / "index.md"
+    uf_dir = func_dir / "user-flows"
+    uc_dir = func_dir / "use-cases"
+
+    if not func_index.exists():
+        errors.append("Falta el archivo obligatorio docs/functional/index.md")
+        return
+
+    _check_markdown_links(func_index, errors)
+    index_content = func_index.read_text(encoding="utf-8")
+
+    uf_candidates: List[Path] = []
+    uc_candidates: List[Path] = []
+
+    if uf_dir.exists():
+        for uf_file in sorted(uf_dir.glob("*.md")):
+            if not uf_file.name.startswith("_"):
+                uf_candidates.append(uf_file)
+                if uf_file.name not in index_content:
+                    warnings.append(
+                        f"El flujo '{uf_file.name}' no esta catalogado en docs/functional/index.md (ejecuta 'desktop-spec sync')"
+                    )
+
+    if uc_dir.exists():
+        for uc_file in sorted(uc_dir.glob("*.md")):
+            if not uc_file.name.startswith("_"):
+                uc_candidates.append(uc_file)
+                if uc_file.name not in index_content:
+                    warnings.append(
+                        f"El caso de uso '{uc_file.name}' no esta catalogado en docs/functional/index.md (ejecuta 'desktop-spec sync')"
+                    )
+
+    for domain_dir in sorted(func_dir.iterdir()):
+        if domain_dir.is_dir() and domain_dir.name not in ("user-flows", "use-cases"):
+            domain_index = domain_dir / "index.md"
+            if not domain_index.exists():
+                warnings.append(
+                    f"Modulo funcional '{domain_dir.name}' sin sub-indice docs/functional/{domain_dir.name}/index.md"
+                )
+            else:
+                _check_markdown_links(domain_index, errors)
+                dom_content = domain_index.read_text(encoding="utf-8")
+                for doc in sorted(domain_dir.rglob("*.md")):
+                    if doc.name != "index.md" and not doc.name.startswith("_"):
+                        if doc.name.startswith("UC-"):
+                            uc_candidates.append(doc)
+                        else:
+                            uf_candidates.append(doc)
+                        if doc.name not in dom_content:
+                            warnings.append(
+                                f"El artefacto '{doc.name}' no figura en el sub-indice de {domain_dir.name}"
+                            )
+
+    discovered_uc_ids: Set[str] = set()
+    for uc_path in uc_candidates:
+        _check_markdown_links(uc_path, errors)
+        uc_data, has_fm = extract_use_case_data(uc_path.read_text(encoding="utf-8"))
+        if not has_fm:
+            warnings.append(f"Caso de uso '{uc_path.name}': falta cabecera YAML Frontmatter")
+        if uc_data.get("id"):
+            discovered_uc_ids.add(str(uc_data["id"]))
+        if uc_schema:
+            errors.extend(validate_against_schema(uc_data, uc_schema, path=uc_path.name))
+
+    for uf_path in uf_candidates:
+        _check_markdown_links(uf_path, errors)
+        uf_data, has_fm = extract_user_flow_data(uf_path.read_text(encoding="utf-8"))
+        if not has_fm:
+            warnings.append(f"Flujo '{uf_path.name}': falta cabecera YAML Frontmatter")
+        if uf_schema:
+            errors.extend(validate_against_schema(uf_data, uf_schema, path=uf_path.name))
+
+        invoked_uc = str(uf_data.get("invokes_use_case") or "").strip()
+        if invoked_uc and invoked_uc.upper() != "N/A":
+            if invoked_uc not in discovered_uc_ids:
+                errors.append(
+                    f"Integridad referencial rota en '{uf_path.name}': "
+                    f"invokes_use_case '{invoked_uc}' no existe entre los casos de uso UC-*.md descubiertos."
+                )
+
+
+def _validate_design_and_technical_docs(
+    docs_dir: Path, errors: List[str], warnings: List[str]
+) -> None:
+    design_dir = docs_dir / "design"
+    design_index = design_dir / "index.md"
+    tokens_file = design_dir / "tokens-and-themes.md"
+    tokens_schema = load_json_schema("design/tokens-and-themes.schema.json")
+
+    if not design_index.exists():
+        errors.append("Falta el archivo obligatorio docs/design/index.md")
+    else:
+        _check_markdown_links(design_index, errors)
+
+    if not tokens_file.exists():
+        errors.append("Falta el documento obligatorio docs/design/tokens-and-themes.md")
+    else:
+        _check_markdown_links(tokens_file, errors)
+        tok_info = extract_design_tokens_summary(tokens_file.read_text(encoding="utf-8"))
+        if not tok_info["has_fm"] or tok_info["artifact_type"] != "design-tokens":
+            errors.append(
+                "docs/design/tokens-and-themes.md debe declarar YAML Frontmatter con artifact_type: design-tokens"
+            )
+        if tokens_schema:
+            props = tokens_schema.get("properties", {})
+            if tok_info["theme_modes"] and "theme_modes" in props:
+                errors.extend(
+                    validate_against_schema(
+                        tok_info["theme_modes"],
+                        props["theme_modes"],
+                        path="tokens-and-themes.md#theme_modes",
+                    )
+                )
+            if tok_info["semantic_colors"] and "semantic_colors" in props:
+                errors.extend(
+                    validate_against_schema(
+                        tok_info["semantic_colors"],
+                        props["semantic_colors"],
+                        path="tokens-and-themes.md#semantic_colors",
+                    )
+                )
+
+    tech_dir = docs_dir / "technical"
+    tech_index = tech_dir / "index.md"
+    if not tech_index.exists():
+        errors.append("Falta el archivo obligatorio docs/technical/index.md")
+        return
+
+    _check_markdown_links(tech_index, errors)
+    tech_index_content = tech_index.read_text(encoding="utf-8")
+
+    for filename, expected_art_type, schema_rel, scalar_key in EXPECTED_TECHNICAL_DOCS:
+        tf_path = tech_dir / filename
+        if not tf_path.exists():
+            errors.append(f"Falta el documento tecnico obligatorio: docs/technical/{filename}")
+            continue
+
+        _check_markdown_links(tf_path, errors)
+        fm, _, has_fm = parse_yaml_frontmatter(tf_path.read_text(encoding="utf-8"))
+        if not has_fm or fm.get("artifact_type") != expected_art_type:
+            warnings.append(
+                f"Documento '{filename}': se recomienda frontmatter 'artifact_type: {expected_art_type}'"
+            )
+
+        schema = load_json_schema(schema_rel)
+        if schema:
+            props = schema.get("properties", {})
+            if scalar_key in fm and scalar_key in props and "{{" not in str(fm[scalar_key]):
+                errors.extend(
+                    validate_against_schema(
+                        fm[scalar_key], props[scalar_key], path=f"{filename}#{scalar_key}"
+                    )
+                )
+
+        if filename not in tech_index_content:
+            warnings.append(f"El documento tecnico '{filename}' no figura en docs/technical/index.md")
+
+
+def _validate_backlog(
+    project_root: Path, docs_dir: Path, req_schema: Dict, errors: List[str]
+) -> Tuple[Set[str], Set[str], bool]:
+    backlog_dir = docs_dir / "backlog"
+    for name in ("index.md", "audit-proposals.md"):
+        doc_p = backlog_dir / name
+        if doc_p.exists():
+            _check_markdown_links(doc_p, errors)
+
+    pending_file = backlog_dir / "pending.md"
+    declared_artifacts: Set[str] = set()
+    declared_modules: Set[str] = set()
+    has_active_reqs = False
+
+    if not pending_file.exists():
+        errors.append("Falta el archivo obligatorio docs/backlog/pending.md")
+        return declared_artifacts, declared_modules, has_active_reqs
+
+    content = pending_file.read_text(encoding="utf-8")
+    stripped_content = re.sub(r"```.*?```", "", content, flags=re.DOTALL)
+    raw_blocks = re.findall(
+        r"(###\s*\[REQ-[^\]]+\].*?)(?=###\s*\[REQ-|\n##\s+Milestone|\Z)",
+        stripped_content,
+        re.DOTALL,
+    )
+    print(f"[INFO] Requerimientos activos analizados en backlog: {len(raw_blocks)}")
+    has_active_reqs = len(raw_blocks) > 0
+
+    for block in raw_blocks:
+        req_data = extract_requirement_data(block)
+        req_id = req_data["id"] or "REQ-UNKNOWN"
+
+        if req_schema:
+            errors.extend(validate_against_schema(req_data, req_schema, path=req_id))
+
+        if not req_data["boundaries"]["artifacts"]:
+            errors.append(
+                f"{req_id}: debe declarar al menos un archivo en 'Fronteras y Artefactos'"
+            )
+        if not req_data["acceptance_criteria"]:
+            errors.append(
+                f"{req_id}: debe incluir al menos una casilla '- [ ]' en 'Criterios de Aceptacion'"
+            )
+
+        scope = req_data.get("scope", "")
+        is_patch = req_data.get("impact_type") == "PATCH"
+        uf_refs = req_data["references"]["user_flows"]
+        uc_refs = req_data["references"]["use_cases"]
+
+        if not is_patch:
+            if scope == "full-module":
+                if not uf_refs:
+                    errors.append(
+                        f"{req_id}: scope 'full-module' exige al menos un flujo UX (UF-*.md)"
+                    )
+                if not uc_refs:
+                    errors.append(
+                        f"{req_id}: scope 'full-module' exige al menos un caso de uso (UC-*.md)"
+                    )
+            elif scope == "ui-only":
+                if not uf_refs:
+                    errors.append(
+                        f"{req_id}: scope 'ui-only' exige al menos un flujo UX (UF-*.md)"
+                    )
+            elif scope == "domain-only":
+                if not uc_refs:
+                    errors.append(
+                        f"{req_id}: scope 'domain-only' exige al menos un caso de uso (UC-*.md)"
+                    )
+
+        for uf_ref in uf_refs:
+            if not (project_root / uf_ref).exists():
+                errors.append(f"{req_id}: el flujo UX '{uf_ref}' no existe en disco")
+
+        for uc_ref in uc_refs:
+            if not (project_root / uc_ref).exists():
+                errors.append(f"{req_id}: el caso de uso '{uc_ref}' no existe en disco")
+
+        for t_ref in req_data["references"]["technical"]:
+            if not t_ref.upper().startswith("N/A") and not (project_root / t_ref).exists():
+                errors.append(
+                    f"{req_id}: la Referencia Tecnica '{t_ref}' no existe en disco"
+                )
+
+        for mod in req_data["boundaries"]["affected_modules"]:
+            if mod.strip():
+                declared_modules.add(mod.strip())
+
+        for art in req_data["boundaries"]["artifacts"]:
+            norm_path = art["path"].replace("\\", "/").lstrip("./")
+            declared_artifacts.add(norm_path)
+            if art["action"] in ("MODIFY", "DELETE") and not (project_root / norm_path).exists():
+                errors.append(
+                    f"{req_id}: archivo '{norm_path}' marcado como [{art['action']}] no existe en disco"
+                )
+
+    return declared_artifacts, declared_modules, has_active_reqs
+
+
+def _validate_spec_json_sidecars(project_root: Path, errors: List[str]) -> None:
+    specs_dir = project_root / ".spec" / "specs"
+    if not specs_dir.is_dir():
+        return
+    schema_mapping = {
+        "tokens-and-themes.json": "design/tokens-and-themes.schema.json",
+        "modular-architecture.json": "technical/modular-architecture.schema.json",
+        "windowing-and-os-contracts.json": "technical/windowing-and-os-contracts.schema.json",
+        "local-persistence.json": "technical/local-persistence.schema.json",
+        "tech-stack.json": "technical/tech-stack.schema.json",
+        "packaging-and-release.json": "technical/packaging-and-release.schema.json",
+    }
+    for json_file in sorted(specs_dir.glob("*.json")):
+        if json_file.name.endswith(".tokens.json"):
+            try:
+                payload = json.loads(json_file.read_text(encoding="utf-8"))
+            except Exception as exc:
+                errors.append(f".spec/specs/{json_file.name}: JSON invalido ({exc})")
+                continue
+            errors.extend(
+                validate_w3c_tokens_dict(payload, label=f".spec/specs/{json_file.name}")
+            )
+            continue
+
+        if json_file.name.startswith("user-flow"):
+            schema_rel = "user-flow.schema.json"
+        elif json_file.name.startswith("use-case"):
+            schema_rel = "use-case.schema.json"
+        else:
+            schema_rel = schema_mapping.get(json_file.name)
+        if not schema_rel:
+            errors.append(
+                f".spec/specs/{json_file.name}: nombre de especificacion JSON no reconocido"
+            )
+            continue
+        schema = load_json_schema(schema_rel)
+        if not schema:
+            continue
+        try:
+            payload = json.loads(json_file.read_text(encoding="utf-8"))
+        except Exception as exc:
+            errors.append(f".spec/specs/{json_file.name}: JSON invalido ({exc})")
+            continue
+        errors.extend(validate_against_schema(payload, schema, path=json_file.name))
+
+
+def audit_github_dependabot_alerts(
+    project_root: Path,
+) -> Tuple[List[str], List[str], List[str]]:
+    """Consulta alertas abiertas de Dependabot usando GitHub CLI (gh)."""
+    sec_errors: List[str] = []
+    sec_warnings: List[str] = []
+    sec_infos: List[str] = []
+
+    gh_bin = shutil.which("gh")
+    if not gh_bin:
+        sec_warnings.append(
+            "GitHub CLI (gh) no detectado en PATH. Instala el prerrequisito 'gh' "
+            "(ej. 'winget install --id GitHub.cli' o https://cli.github.com/) y ejecuta "
+            "'gh auth login' para consultar alertas de Dependabot."
+        )
+        return sec_errors, sec_warnings, sec_infos
+
+    try:
+        proc = subprocess.run(
+            [
+                gh_bin,
+                "api",
+                "repos/{owner}/{repo}/dependabot/alerts?state=open&per_page=100",
+            ],
+            cwd=str(project_root),
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+        )
+    except OSError as exc:
+        sec_warnings.append(
+            f"No se pudo ejecutar GitHub CLI (gh) para consultar Dependabot: {exc}."
+        )
+        return sec_errors, sec_warnings, sec_infos
+
+    if proc.returncode != 0:
+        raw_err = (proc.stderr or proc.stdout or "").strip()
+        detail = raw_err.splitlines()[0] if raw_err else f"exit code {proc.returncode}"
+        sec_warnings.append(
+            f"No se pudo consultar Dependabot via GitHub CLI (gh): {detail}. "
+            "Verifica 'gh auth status' (scope 'security_events') y que el repositorio "
+            "tenga un remoto en GitHub."
+        )
+        return sec_errors, sec_warnings, sec_infos
+
+    try:
+        alerts = json.loads(proc.stdout or "[]")
+    except json.JSONDecodeError as exc:
+        sec_warnings.append(
+            f"Respuesta JSON invalida al consultar Dependabot via gh: {exc}."
+        )
+        return sec_errors, sec_warnings, sec_infos
+
+    if not isinstance(alerts, list):
+        sec_warnings.append(
+            "Formato inesperado en respuesta de alertas de Dependabot via gh."
+        )
+        return sec_errors, sec_warnings, sec_infos
+
+    if len(alerts) == 0:
+        sec_infos.append("[OK] Dependabot (gh): 0 alertas de seguridad abiertas en GitHub.")
+        return sec_errors, sec_warnings, sec_infos
+
+    for alert in alerts:
+        if not isinstance(alert, dict):
+            continue
+        num = alert.get("number", "?")
+        advisory = alert.get("security_advisory") or {}
+        vuln = alert.get("security_vulnerability") or {}
+        dep = alert.get("dependency") or {}
+        pkg = ((dep.get("package") or {}).get("name")) or "paquete-desconocido"
+        sev = str(advisory.get("severity") or vuln.get("severity") or "unknown").lower()
+        ghsa = advisory.get("ghsa_id") or advisory.get("cve_id") or "GHSA-N/A"
+        patched = ((vuln.get("first_patched_version") or {}).get("identifier")) or "sin parche directo"
+        msg = (
+            f"Dependabot #{num} [{sev.upper()}] paquete '{pkg}' ({ghsa}) -> "
+            f"actualizar a: {patched} (registra REQ-DESK-SEC-*)"
+        )
+        if sev in ("critical", "high"):
+            sec_errors.append(msg)
+        else:
+            sec_warnings.append(msg)
+
+    return sec_errors, sec_warnings, sec_infos
+
+
+def run_check(
+    project_root: Path,
+    check_staged: bool = False,
+    strict_tokens: bool = False,
+    check_security: bool = False,
+) -> bool:
+    """Ejecuta auditoria integral de especificaciones, esquemas, enlaces y commits staged."""
+    project_root = Path(project_root).resolve()
+    docs_dir = project_root / "docs"
+    print(f"\n[INFO] Ejecutando verificacion de integridad desktop-spec en: {docs_dir}")
+
+    errors: List[str] = []
+    warnings: List[str] = []
+
+    if not docs_dir.exists():
+        print("[ERROR] Directorio docs/ no encontrado. Ejecuta 'desktop-spec init'.")
+        return False
+
+    uf_schema = load_json_schema("user-flow.schema.json") or {}
+    uc_schema = load_json_schema("use-case.schema.json") or {}
+    req_schema = load_json_schema("requirement.schema.json") or {}
+
+    _validate_functional_docs(docs_dir, uf_schema, uc_schema, errors, warnings)
+    _validate_design_and_technical_docs(docs_dir, errors, warnings)
+    declared_artifacts, declared_modules, has_active_reqs = _validate_backlog(
+        project_root, docs_dir, req_schema, errors
+    )
+    _validate_spec_json_sidecars(project_root, errors)
+
+    for md_file in sorted(docs_dir.rglob("*.md")):
+        md_text = md_file.read_text(encoding="utf-8")
+        for block in re.findall(r"```mermaid\s*\r?\n(.*?)\r?\n```", md_text, re.DOTALL):
+            first_line = block.strip().splitlines()[0].strip() if block.strip() else ""
+            if not any(first_line.startswith(vt) for vt in VALID_MERMAID_TYPES):
+                warnings.append(
+                    f"Diagrama Mermaid sin encabezado estandar en {md_file.name}: '{first_line}'"
+                )
+
+        rev_rows = count_rolling_history_rows(md_text)
+        if rev_rows > 3:
+            warnings.append(
+                f"Historial de Revisiones en '{md_file.relative_to(docs_dir).as_posix()}' tiene {rev_rows} filas (maximo Rolling Window: 3)"
+            )
+
+    if check_staged:
+        cfg = read_config_settings(project_root)
+        _verify_staged_commits(
+            project_root, cfg, declared_artifacts, declared_modules, has_active_reqs, errors
+        )
+
+    if strict_tokens:
+        errors.extend(scan_burned_hex_tokens(project_root))
+
+    if check_security:
+        sec_errors, sec_warnings, sec_infos = audit_github_dependabot_alerts(project_root)
+        for info_msg in sec_infos:
+            print(info_msg)
+        warnings.extend(sec_warnings)
+        errors.extend(sec_errors)
+
+    print("-" * 60)
+    if warnings:
+        print(f"[WARN] Advertencias encontradas ({len(warnings)}):")
+        for w in warnings:
+            print(f"  - {w}")
+    else:
+        print("[OK] Cero advertencias de catalogo, Mermaid o Rolling Window.")
+
+    if errors:
+        print(f"\n[ERROR] Errores de integridad detectados ({len(errors)}):")
+        for e in errors:
+            print(f"  - {e}")
+        return False
+
+    print("[OK] Todos los artefactos, enlaces y esquemas superaron la verificacion.")
+    return True
