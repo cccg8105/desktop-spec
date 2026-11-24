@@ -1,0 +1,189 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "DesktopLocalPersistenceSpecification",
+  "description": "Esquema formal para docs/technical/local-persistence.md (BD embebida, rutas estandar del SO, archivos de proyecto y migraciones on-startup)",
+  "type": "object",
+  "required": [
+    "artifact_type",
+    "storage_engine",
+    "os_data_paths",
+    "er_diagram_mermaid",
+    "tables",
+    "project_file_formats",
+    "migration_strategy"
+  ],
+  "properties": {
+    "artifact_type": {
+      "type": "string",
+      "enum": ["local-persistence"]
+    },
+    "storage_engine": {
+      "type": "string",
+      "enum": [
+        "sqlite-wal",
+        "sqlcipher",
+        "duckdb",
+        "realm",
+        "embedded-kv",
+        "file-based-only"
+      ]
+    },
+    "os_data_paths": {
+      "type": "object",
+      "required": [
+        "data_dir_policy",
+        "cache_dir_policy",
+        "logs_dir_policy"
+      ],
+      "properties": {
+        "data_dir_policy": {
+          "type": "string",
+          "minLength": 5
+        },
+        "cache_dir_policy": {
+          "type": "string",
+          "minLength": 5
+        },
+        "logs_dir_policy": {
+          "type": "string",
+          "minLength": 5
+        }
+      }
+    },
+    "er_diagram_mermaid": {
+      "type": "string",
+      "minLength": 10,
+      "description": "Diagrama de entidad-relacion en sintaxis Mermaid erDiagram"
+    },
+    "tables": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "description", "columns"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 2
+          },
+          "description": {
+            "type": "string",
+            "minLength": 3
+          },
+          "owner_module": {
+            "type": "string"
+          },
+          "storage_engine": {
+            "type": "string"
+          },
+          "columns": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["name", "type", "nullable", "key"],
+              "properties": {
+                "name": {
+                  "type": "string"
+                },
+                "type": {
+                  "type": "string"
+                },
+                "nullable": {
+                  "type": "boolean"
+                },
+                "default": {
+                  "type": ["string", "null"]
+                },
+                "key": {
+                  "type": "string",
+                  "enum": ["PK", "FK", "UK", "NONE"]
+                },
+                "description": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "indices": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["name", "columns"],
+              "properties": {
+                "name": {
+                  "type": "string"
+                },
+                "columns": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "type": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "project_file_formats": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["extension", "format", "version_field"],
+        "properties": {
+          "extension": {
+            "type": "string",
+            "minLength": 2
+          },
+          "format": {
+            "type": "string",
+            "minLength": 2
+          },
+          "version_field": {
+            "type": "string",
+            "minLength": 2
+          },
+          "atomic_write": {
+            "type": "boolean"
+          },
+          "description": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "migration_strategy": {
+      "type": "object",
+      "required": [
+        "tool",
+        "run_trigger",
+        "pre_migration_backup",
+        "schema_version_check",
+        "recovery_policy"
+      ],
+      "properties": {
+        "tool": {
+          "type": "string",
+          "minLength": 2
+        },
+        "run_trigger": {
+          "type": "string",
+          "minLength": 3
+        },
+        "pre_migration_backup": {
+          "type": "boolean"
+        },
+        "schema_version_check": {
+          "type": "string",
+          "minLength": 3
+        },
+        "recovery_policy": {
+          "type": "string",
+          "minLength": 5
+        }
+      }
+    }
+  }
+}

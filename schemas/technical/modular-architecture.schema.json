@@ -1,0 +1,158 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "DesktopModularArchitectureSpecification",
+  "description": "Esquema formal para docs/technical/modular-architecture.md (monolito modular, fronteras, Event Bus interno y concurrencia)",
+  "type": "object",
+  "required": [
+    "artifact_type",
+    "architecture_style",
+    "class_diagram_mermaid",
+    "sequence_diagram_mermaid",
+    "modules",
+    "dependency_rules",
+    "internal_event_bus",
+    "concurrency_model"
+  ],
+  "properties": {
+    "artifact_type": {
+      "type": "string",
+      "enum": ["modular-architecture"]
+    },
+    "architecture_style": {
+      "type": "string",
+      "enum": [
+        "modular-monolith-clean",
+        "modular-monolith-vertical-slice",
+        "mvvm-modular",
+        "mvi-modular"
+      ]
+    },
+    "class_diagram_mermaid": {
+      "type": "string",
+      "minLength": 10,
+      "description": "Diagrama de clases y modulos en sintaxis Mermaid classDiagram"
+    },
+    "sequence_diagram_mermaid": {
+      "type": "string",
+      "minLength": 10,
+      "description": "Diagrama de secuencia entre UI Thread, fachada de modulo, Event Bus y workers en Mermaid sequenceDiagram"
+    },
+    "modules": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "responsibility",
+          "public_facade",
+          "owned_persistence_scope",
+          "allowed_dependencies"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^MOD-[A-Z0-9]+-[0-9]{3,}$",
+            "description": "Identificador unico del modulo (ej. MOD-CORE-001)"
+          },
+          "name": {
+            "type": "string",
+            "minLength": 2
+          },
+          "responsibility": {
+            "type": "string",
+            "minLength": 5
+          },
+          "public_facade": {
+            "type": "string",
+            "minLength": 2,
+            "description": "Interfaz o puerto publico expuesto por el modulo hacia otros modulos y la UI"
+          },
+          "owned_persistence_scope": {
+            "type": "string",
+            "minLength": 2,
+            "description": "Tablas o almacenamiento local propiedad exclusiva del modulo (o 'none' si no persiste)"
+          },
+          "allowed_dependencies": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 2
+            }
+          },
+          "status": {
+            "type": "string",
+            "enum": ["Borrador", "Activo", "As-Is", "Deprecado"]
+          }
+        }
+      }
+    },
+    "dependency_rules": {
+      "type": "object",
+      "required": [
+        "acyclic_modules",
+        "forbid_cross_module_internals",
+        "forbid_ui_direct_persistence",
+        "architecture_test_tool"
+      ],
+      "properties": {
+        "acyclic_modules": {
+          "type": "boolean"
+        },
+        "forbid_cross_module_internals": {
+          "type": "boolean"
+        },
+        "forbid_ui_direct_persistence": {
+          "type": "boolean"
+        },
+        "architecture_test_tool": {
+          "type": "string",
+          "minLength": 2,
+          "description": "Herramienta o regla automatizada para verificar fronteras (ej. NetArchTest, import-linter, ArchUnit)"
+        }
+      }
+    },
+    "internal_event_bus": {
+      "type": "object",
+      "required": [
+        "mechanism",
+        "delivery_guarantee",
+        "async_dispatch"
+      ],
+      "properties": {
+        "mechanism": {
+          "type": "string",
+          "minLength": 2
+        },
+        "delivery_guarantee": {
+          "type": "string",
+          "minLength": 2
+        },
+        "async_dispatch": {
+          "type": "boolean"
+        }
+      }
+    },
+    "concurrency_model": {
+      "type": "object",
+      "required": [
+        "ui_thread_policy",
+        "background_worker_mechanism",
+        "cancellation_support"
+      ],
+      "properties": {
+        "ui_thread_policy": {
+          "type": "string",
+          "minLength": 5
+        },
+        "background_worker_mechanism": {
+          "type": "string",
+          "minLength": 3
+        },
+        "cancellation_support": {
+          "type": "boolean"
+        }
+      }
+    }
+  }
+}

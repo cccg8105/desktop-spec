@@ -1,0 +1,130 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "DesktopRequirementSpecification",
+  "description": "Esquema formal para requerimientos atomicos de escritorio nativo en docs/backlog/pending.md y changelog.md",
+  "type": "object",
+  "required": [
+    "id",
+    "title",
+    "priority",
+    "impact_type",
+    "scope",
+    "target_version",
+    "references",
+    "boundaries",
+    "acceptance_criteria"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^REQ-DESK-[A-Z0-9]+-[0-9]{3,}$",
+      "description": "Identificador unico REQ-DESK-[DOMINIO]-[NUMERO] (ej. REQ-DESK-CORE-001)"
+    },
+    "title": {
+      "type": "string",
+      "minLength": 5
+    },
+    "priority": {
+      "type": "string",
+      "enum": ["P1", "P2", "P3"]
+    },
+    "impact_type": {
+      "type": "string",
+      "enum": ["MAJOR", "MINOR", "PATCH"]
+    },
+    "scope": {
+      "type": "string",
+      "enum": ["ui-only", "domain-only", "full-module", "packaging-infra"],
+      "description": "Alcance del cambio dentro del monolito modular desktop"
+    },
+    "track": {
+      "type": "string",
+      "enum": ["FULL", "FAST_TRACK"]
+    },
+    "target_version": {
+      "type": "string",
+      "minLength": 2,
+      "description": "Version del hito o release asignado (ej. v0.2.0)"
+    },
+    "references": {
+      "type": "object",
+      "required": ["user_flows", "use_cases", "technical"],
+      "properties": {
+        "user_flows": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Lista de documentos UF-*.md impactados (vacia si es domain-only o packaging-infra)"
+        },
+        "use_cases": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Lista de documentos UC-*.md impactados (vacia si es ui-only o packaging-infra)"
+        },
+        "technical": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Lista de documentos tecnicos en docs/technical/ afectados"
+        }
+      }
+    },
+    "boundaries": {
+      "type": "object",
+      "required": ["affected_modules", "artifacts", "restrictions"],
+      "properties": {
+        "affected_modules": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "description": "Modulos de dominio o capas autorizadas para el cambio (ej. core, projects, shell-ui)"
+        },
+        "artifacts": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["path", "action"],
+            "properties": {
+              "path": {
+                "type": "string",
+                "minLength": 2
+              },
+              "action": {
+                "type": "string",
+                "enum": ["NEW", "MODIFY", "DELETE"]
+              }
+            }
+          }
+        },
+        "restrictions": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "acceptance_criteria": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["description", "completed"],
+        "properties": {
+          "description": {
+            "type": "string",
+            "minLength": 3
+          },
+          "completed": {
+            "type": "boolean"
+          }
+        }
+      }
+    }
+  }
+}
