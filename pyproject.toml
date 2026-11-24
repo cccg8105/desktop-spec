@@ -1,0 +1,37 @@
+[project]
+name = "desktop-spec"
+version = "0.1.0"
+description = "CLI tool and framework for Spec-Driven Native Desktop Modular Monolith development with AI agents"
+readme = "README.md"
+requires-python = ">=3.9"
+dependencies = []
+
+[project.scripts]
+desktop-spec = "desktop_spec.__main__:main"
+dspec = "desktop_spec.__main__:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["cli/desktop_spec"]
+
+[tool.hatch.build.targets.wheel.force-include]
+"templates" = "desktop_spec/templates"
+"harnesses" = "desktop_spec/harnesses"
+"schemas" = "desktop_spec/schemas"
+
+[tool.hatch.build.targets.sdist]
+include = [
+  "cli/**",
+  "templates/**",
+  "harnesses/**",
+  "schemas/**",
+  "guides/**",
+  "agent-prompts/**",
+  "README.md",
+  "ARCHITECTURE.md",
+  "ROADMAP.md",
+  "CHANGELOG.md",
+]

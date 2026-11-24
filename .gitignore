@@ -1,0 +1,66 @@
+# Python CLI & Packaging
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+dist/
+build/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# .NET Desktop (WPF / WinUI 3 / Avalonia / MAUI)
+bin/
+obj/
+*.user
+*.suo
+*.vs/
+TestResults/
+publish/
+
+# JVM / Gradle / Maven (Compose Desktop / JavaFX)
+.gradle/
+target/
+out/
+*.class
+
+# Rust / C++ / Qt (Slint / Iced / Qt)
+cmake-build-*/
+CMakeFiles/
+CMakeCache.txt
+*.o
+*.obj
+
+# Graphify Knowledge Graph
+graphify-out/
+
+# Environment, Signing & Secrets
+.env
+.env.*
+!.env.example
+*.pfx
+*.p12
+*.snk
+*.pem
+*.key
+*.crt
+*.keystore
+
+# Logs & Installers
+*.log
+*.msi
+*.msix
+*.exe
+*.dmg
+*.pkg
+*.AppImage
+*.deb
+*.rpm
+
+# OS & Editors
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
