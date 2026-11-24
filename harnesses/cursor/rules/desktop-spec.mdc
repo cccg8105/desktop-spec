@@ -1,0 +1,29 @@
+---
+description: "Reglas obligatorias de desktop-spec para Cursor (Dos Velocidades, frontera UF->UC, monolito modular nativo, persistencia local, seguridad y Graphify)."
+globs: src/**/*, app/**/*, modules/**/*, views/**/*, ui/**/*, tests/**/*, docs/**/*
+alwaysApply: true
+---
+
+<!-- DESKTOP-SPEC:START -->
+# desktop-spec — Reglas Operativas para Cursor
+
+> Bloque gestionado por `desktop-spec`. No modifiques manualmente entre `DESKTOP-SPEC:START` y `DESKTOP-SPEC:END`.
+
+## 1. Gatekeeper de Dos Velocidades
+- **PROHIBIDO** editar codigo fuente (`src/`, `app/`, `modules/`, `views/`, `ui/`, `tests/`) sin un `REQ-DESK-*` activo en `docs/backlog/pending.md` aprobado por el usuario.
+- **Carril Completo (`MAJOR` / `MINOR`):** Usa `/desk-grill` -> Frontera Funcional (`UF-*` con Matriz FSM `ui-contracts-guidelines.md` y/o `UC-*` con OCL `ocl-guidelines.md`) -> Tokens / Arquitectura Modular `MOD-*` / Ventanas `WIN-*` y Persistencia Local / Empaquetado -> Tests *Spec-First* -> `docs/backlog/pending.md` -> `dspec sync && dspec check` -> Gatekeeper `/desk-plan`.
+- **Fast-Track (`PATCH`):** Usa `Referencia Funcional: N/A (PATCH / Fast-Track)` para fixes locales sin cambiar contratos `UF-*`/`UC-*`, esquemas de BD ni fachadas `MOD-*`; diagnostica con `/diagnose` + test de regresion en rojo y solicita confirmacion breve.
+
+## 2. Estandares del Monolito Modular Nativo
+- **Contexto O(1):** Lee `docs/functional/index.md`, `docs/design/index.md`, `docs/technical/index.md` y `graphify-out/` (si existe) antes de abrir multiples archivos.
+- **Entrevista (`AskQuestion`):** Aplica *"Codigo, Modulos y Esquemas primero, humano despues"*; agrupa de 2 a 4 decisiones concretas por tarjeta interactiva mediante `AskQuestion` con la opcion `(Recommended)` primero.
+- **Frontera `UF-*` vs `UC-*`:** `UF-*` gobierna ventanas, atajos, estados UI, accesibilidad OS e invariantes (`NoDoubleSubmit`, `PreserveDraftOnError`, `FocusRestoration`, `NoMainThreadBlock`, `GuardUnsavedChangesOnClose`) y delega via `invokes_use_case`. `UC-*` gobierna reglas `[BR-XX]` OCL, persistencia local y eventos internos sin conocer controles visuales.
+- **Fronteras Modulares y Tokens:** Prohibido importar internos de otros modulos `MOD-*` o consultar SQLite desde vistas UI. Consume exclusivamente tokens de `docs/design/tokens-and-themes.md` (`light`, `dark`, `system`, `high-contrast`, densidad desktop).
+
+## 3. Seguridad, Brownfield Just-In-Time y Graphify
+- **Fronteras Estrictas:** Modifica unicamente archivos declarados `[NEW]`, `[MODIFY]`, `[DELETE]` en `docs/backlog/pending.md` y manten `docs/backlog/audit-proposals.md` (`[AUDIT-DESK-*]`) en solo lectura salvo promocion explicita.
+- **Brownfield *Just-In-Time*:** Documenta el comportamiento *As-Is* antes de evolucionar modulos legados marcados `Pendiente As-Is` en `docs/functional/index.md`; usa `/desk-bootstrap` para adoptar repositorios existentes.
+- **Seguridad Local y Dependabot (`gh` CLI):** Exige OS Keyring para secretos, canonizacion contra Path Traversal y deserializacion segura. Ante alertas de paquetes, verifica `gh auth status`, diagnostica con `gh api "repos/{owner}/{repo}/dependabot/alerts?state=open"` (`gh pr list --author "app/dependabot"` y auditor local `dotnet list package --vulnerable`, `pip-audit`, `cargo audit`, `gradle`). Tramita parches compatibles por **Fast-Track (`PATCH`)** bajo `REQ-DESK-SEC-*` y valida con `dspec check --security`; escala upgrades `MAJOR` con impacto en codigo fuente a `/desk-plan`.
+- **Verificacion, `/code-review` y Graphify:** Ejecuta tests de arquitectura, dominio/BD y UI headless, realiza `/code-review` del diff, manten tablas *Rolling Window* con maximo 3 filas y ejecuta `graphify update` respetando `.graphifyignore`.
+- **Empaquetado y Releases (`desktop-release`):** Para matriz CI multi-SO (`windows-latest`, `macos-latest`, `ubuntu-latest`), Code Signing & Notarization (`secrets.*` nunca en repo/binario), canales `beta`/`stable` y Auto-Updater, activa `.cursor/skills/desktop-release/SKILL.md` (auditoria previa con `gh variable list` / `gh secret list`).
+<!-- DESKTOP-SPEC:END -->
