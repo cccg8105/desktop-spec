@@ -50,6 +50,11 @@ RULES: tuple[VersionRule, ...] = (
         re.compile(rf'(?m)^(version:\s*"){VER_CAPTURE}(")$'),
         r"\g<1>{version}\g<3>",
     ),
+    VersionRule(
+        "templates/.spec/docs/backlog/changelog.md",
+        re.compile(rf"(?m)^(- \*\*`\[INIT\]` Adopción de `desktop-spec` v){VER_CAPTURE}(\*\*)$"),
+        r"\g<1>{version}\g<3>",
+    ),
 )
 
 

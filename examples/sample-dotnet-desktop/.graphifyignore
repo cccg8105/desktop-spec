@@ -1,0 +1,109 @@
+# ==============================================================================
+# .graphifyignore - Exclusiones para el Grafo de Conocimiento Desktop (Graphify)
+# ==============================================================================
+
+# 1. .NET Desktop (WPF / WinUI 3 / Avalonia / MAUI)
+bin/
+obj/
+.vs/
+*.user
+*.suo
+TestResults/
+publish/
+
+# 2. Python Desktop (PySide6 / PyQt6 / Flet)
+.venv/
+venv/
+env/
+__pycache__/
+__pypackages__/
+*.pyc
+*.pyo
+*.pyd
+*.egg-info/
+.pytest_cache/
+dist/
+build/
+
+# 3. JVM Desktop (Compose Desktop / JavaFX)
+.gradle/
+target/
+out/
+*.class
+*.jar
+*.war
+
+# 4. Rust / C++ Nativos (Slint / Iced / egui / Qt6 C++)
+cmake-build-*/
+CMakeFiles/
+CMakeCache.txt
+*.o
+*.obj
+*.a
+*.lib
+*.so
+*.dylib
+*.dll
+
+# 5. Instaladores, Binarios y Recursos Pesados
+*.msi
+*.msix
+*.msixbundle
+*.exe
+*.dmg
+*.pkg
+*.app/
+*.AppImage
+*.deb
+*.rpm
+*.flatpak
+*.iso
+*.zip
+*.tar.gz
+*.tgz
+*.png
+*.jpg
+*.jpeg
+*.webp
+*.ico
+*.icns
+*.ttf
+*.otf
+*.woff2
+
+# 6. Llaves de Firma, Certificados y Secretos (Seguridad Critica)
+*.pfx
+*.p12
+*.keystore
+*.jks
+*.pem
+*.key
+*.crt
+*.cer
+.env
+.env.*
+!.env.example
+credentials.json
+secrets.*
+
+# 7. Bases de Datos Locales, Reportes de Pruebas y Logs
+*.db
+*.db-wal
+*.db-shm
+*.sqlite
+*.sqlite3
+coverage/
+htmlcov/
+*.lcov
+*.log
+
+# 8. Caches y Sistema Operativo
+.cache/
+.temp/
+.tmp/
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# 9. Salida Interna de Graphify
+graphify-out/
