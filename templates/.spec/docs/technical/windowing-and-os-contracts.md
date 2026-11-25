@@ -60,6 +60,14 @@ flowchart TD
 - **System Tray (`system_tray`):** Deshabilitado por defecto (`none`); documentar comportamiento de minimizar vs. cerrar si se adopta `tray-resident`.
 - **Permisos del SO (`os_permissions`):** Operación estándar en espacio de usuario sin elevación de administrador ni privilegios root.
 
+### Contratos IPC / FFI (Opcional para Shells Hibridos o Puentes Nativos)
+
+> *Aplicable cuando el stack (`{{ECOSYSTEM_NAME}}`) utiliza un shell híbrido WebView o invocaciones nativas por FFI. Proyectos nativos puros v1.0.0 pueden omitir esta tabla o marcarla como `none`.*
+
+| Canal / Simbolo | Direccion | Contrato de Payload | Validacion de Seguridad |
+| :--- | :--- | :--- | :--- |
+| `cmd:example_action` | `UI -> Core` | `{ input: string }` -> `{ ok: bool, data?: object }` | Validar esquema del payload en el core, restringir capacidades al `allowlist` declarado y canonizar cualquier ruta de archivo. |
+
 ---
 
 ## Historial de Revisiones (Últimos Cambios)

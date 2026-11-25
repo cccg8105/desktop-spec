@@ -52,7 +52,7 @@ class TestEcosystemDetector(unittest.TestCase):
         schema_ecosystems = schema["properties"]["ecosystem"]["enum"]
 
         profile_ecosystems = [p["ecosystem"] for p in ECOSYSTEM_PROFILES]
-        self.assertEqual(len(ECOSYSTEM_PROFILES), 11)
+        self.assertEqual(len(ECOSYSTEM_PROFILES), 16)
         self.assertEqual(profile_ecosystems, schema_ecosystems)
 
         for profile in ECOSYSTEM_PROFILES:

@@ -156,6 +156,37 @@
           "minLength": 2
         }
       }
+    },
+    "ipc_ffi_contracts": {
+      "type": "array",
+      "description": "Contratos opcionales de comunicacion IPC o FFI para arquitecturas hibridas (Tauri, Electron, Wails, Flutter FFI)",
+      "items": {
+        "type": "object",
+        "required": [
+          "channel",
+          "direction",
+          "payload_contract",
+          "security_boundary"
+        ],
+        "properties": {
+          "channel": {
+            "type": "string",
+            "minLength": 2
+          },
+          "direction": {
+            "type": "string",
+            "minLength": 2
+          },
+          "payload_contract": {
+            "type": "string",
+            "minLength": 2
+          },
+          "security_boundary": {
+            "type": "string",
+            "minLength": 2
+          }
+        }
+      }
     }
   }
 }

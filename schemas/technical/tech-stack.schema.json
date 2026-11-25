@@ -28,7 +28,12 @@
         "compose-desktop",
         "javafx",
         "rust-native",
-        "qt-cpp"
+        "qt-cpp",
+        "tauri",
+        "electron",
+        "wails",
+        "flutter-desktop",
+        "swift-macos"
       ]
     },
     "core": {

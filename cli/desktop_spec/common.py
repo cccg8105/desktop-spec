@@ -44,6 +44,11 @@ _ECOSYSTEM_DEFAULT_EXT: Dict[str, str] = {
     "javafx": ".java",
     "rust-native": ".rs",
     "qt-cpp": ".cpp",
+    "tauri": ".ts",
+    "electron": ".ts",
+    "wails": ".go",
+    "flutter-desktop": ".dart",
+    "swift-macos": ".swift",
 }
 
 

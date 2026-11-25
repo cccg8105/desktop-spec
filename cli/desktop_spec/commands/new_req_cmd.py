@@ -92,12 +92,26 @@ def _resolve_desktop_artifact(
             return f"{ui_dir}/{mod_lower}/{slug_snake}.rs"
         if ecosystem == "qt-cpp":
             return f"{ui_dir}/{mod_lower}/{slug_pascal}View.qml"
+        if ecosystem in ("tauri", "electron", "wails"):
+            return f"{ui_dir}/{mod_lower}/{slug_pascal}.tsx"
+        if ecosystem == "flutter-desktop":
+            return f"{ui_dir}/{mod_lower}/{slug_snake}_page.dart"
+        if ecosystem == "swift-macos":
+            return f"{ui_dir}/{mod_pascal}/{slug_pascal}View.swift"
         return f"{ui_dir}/{mod_lower}/{slug_pascal}{src_ext}"
 
     if ecosystem in ("pyside6", "pyqt6", "flet"):
         return f"{modules_dir}/{mod_lower}/{slug_snake}.py"
-    if ecosystem == "rust-native":
+    if ecosystem in ("rust-native", "tauri"):
         return f"{modules_dir}/{mod_lower}/{slug_snake}.rs"
+    if ecosystem == "electron":
+        return f"{modules_dir}/{mod_lower}/{slug_snake}.ts"
+    if ecosystem == "wails":
+        return f"{modules_dir}/{mod_lower}/{slug_snake}.go"
+    if ecosystem == "flutter-desktop":
+        return f"{modules_dir}/{mod_lower}/{slug_snake}.dart"
+    if ecosystem == "swift-macos":
+        return f"{modules_dir}/{mod_pascal}/{slug_pascal}.swift"
     if ecosystem == "qt-cpp":
         return f"{modules_dir}/{mod_lower}/{slug_pascal}.cpp"
     return f"{modules_dir}/{mod_lower}/{slug_pascal}{src_ext}"

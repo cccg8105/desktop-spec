@@ -13,6 +13,7 @@ from desktop_spec.detector.version_extractor import (
     compute_next_milestone,
     extract_version,
     parse_version_tuple,
+    sync_multi_manifest_versions,
     update_version,
 )
 
@@ -207,6 +208,29 @@ class TestVersionExtractor(unittest.TestCase):
         calver_old = compute_next_milestone("2020.01.3", "calver")
         self.assertTrue(calver_old.endswith(".1"))
         self.assertTrue(calver_old.startswith("v"))
+
+    def test_yaml_and_sync_multi_manifest_versions(self):
+        pubspec = self.test_dir / "pubspec.yaml"
+        pubspec.write_text(
+            "name: desktop_app\ndescription: Flutter desktop\nversion: 1.2.3+4\n",
+            encoding="utf-8",
+        )
+        self.assertEqual(extract_version(pubspec, "yaml"), "1.2.3+4")
+        self.assertTrue(update_version(pubspec, "yaml", "2.0.0"))
+        self.assertEqual(extract_version(pubspec, "yaml"), "2.0.0")
+
+        pkg = self.test_dir / "package.json"
+        pkg.write_text('{\n  "name": "tauri-ui",\n  "version": "1.0.0"\n}\n', encoding="utf-8")
+        cargo = self.test_dir / "Cargo.toml"
+        cargo.write_text('[package]\nname = "tauri-app"\nversion = "1.0.0"\n', encoding="utf-8")
+        tauri_conf = self.test_dir / "tauri.conf.json"
+        tauri_conf.write_text('{\n  "version": "1.0.0"\n}\n', encoding="utf-8")
+
+        results = sync_multi_manifest_versions([pkg, cargo, tauri_conf], "2.5.0")
+        self.assertTrue(all(results.values()))
+        self.assertEqual(extract_version(pkg, "json"), "2.5.0")
+        self.assertEqual(extract_version(cargo, "toml"), "2.5.0")
+        self.assertEqual(extract_version(tauri_conf, "json"), "2.5.0")
 
 
 if __name__ == "__main__":

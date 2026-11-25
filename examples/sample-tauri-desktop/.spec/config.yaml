@@ -1,0 +1,44 @@
+# ==============================================================================
+# desktop-spec v0.1.0 - Configuracion del Proyecto (Monolito Modular Hibrido)
+# ==============================================================================
+
+framework: desktop-spec
+version: "0.1.0"
+project_name: "sample-tauri-desktop"
+
+ecosystem:
+  name: "tauri"
+  family: "hybrid-rust-ts"
+  ui_toolkit: "Tauri v2 (WebView + TypeScript)"
+  language: "Rust + TypeScript"
+  embedded_db: "SQLite (WAL)"
+  unit_test_runner: "cargo test"
+  ui_test_runner: "playwright"
+  manifest_file: "src-tauri/Cargo.toml"
+  src_dir: "src-tauri/src"
+  ui_dir: "src"
+  modules_dir: "src-tauri/src/modules"
+  test_pattern: "src-tauri/tests/{slug_snake}.rs"
+
+versioning_scheme: "semver"
+current_version: "0.1.0"
+current_milestone: "v0.2.0"
+
+version_file:
+  path: "src-tauri/Cargo.toml"
+  format: "toml"
+  field: "version"
+
+modules:
+  - tasks
+
+harnesses:
+  - antigravity
+
+paths:
+  user_flows_docs: "docs/functional/user-flows"
+  use_cases_docs: "docs/functional/use-cases"
+  design_docs: "docs/design"
+  technical_docs: "docs/technical"
+  backlog: "docs/backlog"
+  templates: ".spec/templates"
