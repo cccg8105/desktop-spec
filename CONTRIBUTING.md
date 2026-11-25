@@ -1,6 +1,6 @@
 # Guía de Contribución y Gobernanza del Repositorio — desktop-spec
 
-Este documento define el flujo de ramas, registro de cambios y versionamiento SemVer para el desarrollo de `desktop-spec` (equivalente al modelo usado en `backend-spec` y `frontend-spec`).
+Este documento define el flujo de ramas, registro de cambios y versionamiento SemVer para el desarrollo de `desktop-spec`.
 
 ---
 

@@ -2,7 +2,7 @@
 
 > **Framework y CLI de Especificación Viva para Aplicaciones de Escritorio Nativas como Monolito Modular asistidas por Agentes de IA (Spec-Driven Desktop)**
 
-`desktop-spec` adapta los principios de ingeniería gobernada por especificaciones de `backend-spec` y `frontend-spec` a las particularidades del software de escritorio nativo (**C#/.NET WPF, WinUI 3, Avalonia, MAUI Desktop; Python PySide6/PyQt6/Flet; JVM Compose Desktop/JavaFX; Rust Slint/Iced y C++/Qt**) estructurado como **monolito modular standalone / local-first**.
+`desktop-spec` es un framework y CLI de ingeniería gobernada por especificaciones diseñado específicamente para el desarrollo de software de escritorio nativo (**C#/.NET WPF, WinUI 3, Avalonia, MAUI Desktop; Python PySide6/PyQt6/Flet; JVM Compose Desktop/JavaFX; Rust Slint/Iced y C++/Qt**) estructurado como **monolito modular standalone / local-first**.
 
 ---
 
@@ -20,7 +20,7 @@
 
 | Documento | Propósito |
 | :--- | :--- |
-| [ARCHITECTURE.md](ARCHITECTURE.md) | Definición de los 5 componentes principales, frontera `UC-*` / `UF-*`, taxonomía de `docs/`, perfiles nativos y qué aplica o se excluye frente a backend/frontend web. |
+| [ARCHITECTURE.md](ARCHITECTURE.md) | Definición de los 5 componentes principales, frontera `UC-*` / `UF-*`, taxonomía de `docs/`, perfiles nativos y límites explícitos de alcance. |
 | [ROADMAP.md](ROADMAP.md) | Plan estructurado en fases iterativas (Fases 0 a 5) y descomposición de carriles independientes para ejecución paralela con `/teamwork`. |
 | [CHANGELOG.md](CHANGELOG.md) | Historial SemVer 2.0.0 del framework. |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | Gobernanza de ramas por bloque de cambios, `CHANGELOG.md` y uso de `scripts/bump_version.py`. |
