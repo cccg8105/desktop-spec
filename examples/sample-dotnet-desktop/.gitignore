@@ -1,0 +1,87 @@
+# .NET Desktop (WPF / WinUI 3 / Avalonia / MAUI)
+bin/
+obj/
+.vs/
+*.user
+*.suo
+TestResults/
+publish/
+
+# Python Desktop (PySide6 / PyQt6 / Flet)
+.venv/
+venv/
+env/
+__pycache__/
+__pypackages__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+dist/
+build/
+
+# JVM Desktop (Compose Desktop / JavaFX)
+.gradle/
+target/
+build/
+out/
+*.class
+*.jar
+*.war
+
+# Rust / C++ Nativos (Slint / Iced / egui / Qt6 C++)
+cmake-build-*/
+CMakeFiles/
+CMakeCache.txt
+*.o
+*.obj
+*.a
+*.lib
+*.so
+*.dylib
+*.dll
+
+# Instaladores y Paquetes Nativos
+*.msi
+*.msix
+*.msixbundle
+*.exe
+*.dmg
+*.pkg
+*.app/
+*.AppImage
+*.deb
+*.rpm
+*.flatpak
+
+# Llaves de Firma, Certificados y Secretos Locales
+*.pfx
+*.p12
+*.keystore
+*.jks
+*.pem
+*.key
+*.crt
+*.cer
+.env
+.env.*
+!.env.example
+secrets.*
+
+# Bases de Datos Locales de Prueba, Cobertura y Logs
+*.db
+*.db-wal
+*.db-shm
+*.sqlite
+*.sqlite3
+coverage/
+htmlcov/
+*.lcov
+*.log
+
+# Graphify
+graphify-out/
+
+# Sistema Operativo
+.DS_Store
+Thumbs.db
+Desktop.ini

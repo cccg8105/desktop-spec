@@ -1,0 +1,49 @@
+# ==============================================================================
+# desktop-spec v0.1.0 - Configuracion del Proyecto (Monolito Modular Nativo)
+# ==============================================================================
+
+framework: desktop-spec
+version: "0.1.0"
+project_name: "sample-pyside6-desktop"
+
+# Perfil de ecosistema desktop nativo detectado o seleccionado en init
+ecosystem:
+  name: "pyside6" # wpf | winui3 | avalonia | maui-desktop | pyside6 | pyqt6 | flet | compose-desktop | javafx | rust-native | qt-cpp
+  family: "python" # dotnet | python | jvm | rust-cpp
+  ui_toolkit: "PySide6 (Qt6)"
+  language: "Python"
+  embedded_db: "SQLite (WAL)"
+  unit_test_runner: "pytest"
+  ui_test_runner: "pytest-qt"
+  manifest_file: "pyproject.toml"
+  src_dir: "src"
+  ui_dir: "src/ui"
+  modules_dir: "src/modules"
+  test_pattern: "tests/test_{slug_snake}.py"
+
+# Estrategia de versionamiento del proyecto consumidor: semver | calver | sequential
+versioning_scheme: "semver"
+current_version: "0.1.0"
+current_milestone: "v0.2.0"
+
+# Archivo manifiesto del codigo donde se sincroniza la version de la app
+version_file:
+  path: "pyproject.toml"
+  format: "toml" # xml | toml | gradle | cfg | cmake | plain | json
+  field: "version"
+
+# Modulos de dominio del monolito modular
+modules:
+  - core
+
+harnesses:
+  - antigravity
+
+# Rutas estandar del framework
+paths:
+  user_flows_docs: "docs/functional/user-flows"
+  use_cases_docs: "docs/functional/use-cases"
+  design_docs: "docs/design"
+  technical_docs: "docs/technical"
+  backlog: "docs/backlog"
+  templates: ".spec/templates"

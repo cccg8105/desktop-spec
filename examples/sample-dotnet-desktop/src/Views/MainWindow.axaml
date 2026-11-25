@@ -1,0 +1,35 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="SampleNotes.Views.MainWindow"
+        Title="SampleNotes"
+        Width="960"
+        Height="640"
+        MinWidth="640"
+        MinHeight="480"
+        Background="{DynamicResource ColorSurfacePrimary}"
+        Foreground="{DynamicResource ColorTextPrimary}">
+  <Grid RowDefinitions="Auto,*" Margin="{DynamicResource SpacingMd}">
+    <Border Grid.Row="0"
+            Padding="{DynamicResource SpacingSm}"
+            Background="{DynamicResource ColorSurfaceSecondary}"
+            CornerRadius="{DynamicResource RadiusMd}">
+      <TextBlock Text="SampleNotes"
+                 FontSize="{DynamicResource FontSizeTitle}"
+                 FontWeight="SemiBold"
+                 Foreground="{DynamicResource ColorTextPrimary}" />
+    </Border>
+    <StackPanel Grid.Row="1" Spacing="{DynamicResource SpacingSm}" Margin="{DynamicResource SpacingMd}">
+      <TextBox Watermark="Titulo de la nota"
+               Background="{DynamicResource ColorSurfaceElevated}"
+               Foreground="{DynamicResource ColorTextPrimary}" />
+      <TextBox Watermark="Contenido"
+               AcceptsReturn="True"
+               Height="180"
+               Background="{DynamicResource ColorSurfaceElevated}"
+               Foreground="{DynamicResource ColorTextPrimary}" />
+      <Button Content="Guardar nota"
+              Background="{DynamicResource ColorAccentPrimary}"
+              Foreground="{DynamicResource ColorTextOnAccent}" />
+    </StackPanel>
+  </Grid>
+</Window>

@@ -1,0 +1,49 @@
+# ==============================================================================
+# desktop-spec v0.1.0 - Configuracion del Proyecto (Monolito Modular Nativo)
+# ==============================================================================
+
+framework: desktop-spec
+version: "0.1.0"
+project_name: "sample-dotnet-desktop"
+
+# Perfil de ecosistema desktop nativo detectado o seleccionado en init
+ecosystem:
+  name: "avalonia" # wpf | winui3 | avalonia | maui-desktop | pyside6 | pyqt6 | flet | compose-desktop | javafx | rust-native | qt-cpp
+  family: "dotnet" # dotnet | python | jvm | rust-cpp
+  ui_toolkit: "Avalonia UI"
+  language: "C#"
+  embedded_db: "SQLite (WAL)"
+  unit_test_runner: "xUnit"
+  ui_test_runner: "Avalonia.Headless"
+  manifest_file: "app.csproj"
+  src_dir: "src"
+  ui_dir: "src/Views"
+  modules_dir: "src/Modules"
+  test_pattern: "tests/{slug_pascal}Tests.cs"
+
+# Estrategia de versionamiento del proyecto consumidor: semver | calver | sequential
+versioning_scheme: "semver"
+current_version: "0.1.0"
+current_milestone: "v0.2.0"
+
+# Archivo manifiesto del codigo donde se sincroniza la version de la app
+version_file:
+  path: "app.csproj"
+  format: "xml" # xml | toml | gradle | cfg | cmake | plain | json
+  field: "Version"
+
+# Modulos de dominio del monolito modular
+modules:
+  - core
+
+harnesses:
+  - antigravity
+
+# Rutas estandar del framework
+paths:
+  user_flows_docs: "docs/functional/user-flows"
+  use_cases_docs: "docs/functional/use-cases"
+  design_docs: "docs/design"
+  technical_docs: "docs/technical"
+  backlog: "docs/backlog"
+  templates: ".spec/templates"

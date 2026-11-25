@@ -1,0 +1,153 @@
+{
+  "$description": "W3C DTCG Design Tokens exported by desktop-spec (dspec sync --export-tokens)",
+  "color": {
+    "bg-base": {
+      "$type": "color",
+      "$value": "#F5F6F8",
+      "$description": "Fondo base de la ventana principal y contenedores raiz",
+      "$extensions": {
+        "mode": {
+          "light": "#F5F6F8",
+          "dark": "#111317",
+          "high_contrast": "#000000"
+        }
+      }
+    },
+    "surface": {
+      "$type": "color",
+      "$value": "#FFFFFF",
+      "$description": "Paneles laterales, inspectores, barras y formularios",
+      "$extensions": {
+        "mode": {
+          "light": "#FFFFFF",
+          "dark": "#1A1D23",
+          "high_contrast": "#000000"
+        }
+      }
+    },
+    "surface-elevated": {
+      "$type": "color",
+      "$value": "#F0F2F5",
+      "$description": "Menus contextuales, popovers, dialogos y cabeceras de tabla",
+      "$extensions": {
+        "mode": {
+          "light": "#F0F2F5",
+          "dark": "#232730",
+          "high_contrast": "#1A1A1A"
+        }
+      }
+    },
+    "primary": {
+      "$type": "color",
+      "$value": "#0F52BA",
+      "$description": "Accion primaria, seleccion activa e indicador de foco",
+      "$extensions": {
+        "mode": {
+          "light": "#0F52BA",
+          "dark": "#4C8DFF",
+          "high_contrast": "#FFFF00"
+        }
+      }
+    },
+    "primary-hover": {
+      "$type": "color",
+      "$value": "#0B3E91",
+      "$description": "Estado hover o presionado sobre accion primaria",
+      "$extensions": {
+        "mode": {
+          "light": "#0B3E91",
+          "dark": "#70A5FF",
+          "high_contrast": "#FFFFFF"
+        }
+      }
+    },
+    "text-main": {
+      "$type": "color",
+      "$value": "#181B20",
+      "$description": "Texto operativo principal y encabezados (>= 7:1)",
+      "$extensions": {
+        "mode": {
+          "light": "#181B20",
+          "dark": "#F1F3F5",
+          "high_contrast": "#FFFFFF"
+        }
+      }
+    },
+    "text-muted": {
+      "$type": "color",
+      "$value": "#4E5866",
+      "$description": "Etiquetas secundarias, metadatos y barra de estado (>= 4.5:1)",
+      "$extensions": {
+        "mode": {
+          "light": "#4E5866",
+          "dark": "#9AA4B2",
+          "high_contrast": "#E0E0E0"
+        }
+      }
+    },
+    "border": {
+      "$type": "color",
+      "$value": "#D4D9E2",
+      "$description": "Divisores `SplitPane`, bordes de entrada y contornos (>= 3:1)",
+      "$extensions": {
+        "mode": {
+          "light": "#D4D9E2",
+          "dark": "#2F3541",
+          "high_contrast": "#FFFFFF"
+        }
+      }
+    },
+    "danger": {
+      "$type": "color",
+      "$value": "#C92A2A",
+      "$description": "Errores de validacion, alertas criticas y acciones destructivas",
+      "$extensions": {
+        "mode": {
+          "light": "#C92A2A",
+          "dark": "#FF6B6B",
+          "high_contrast": "#FF4D4D"
+        }
+      }
+    },
+    "warning": {
+      "$type": "color",
+      "$value": "#B45309",
+      "$description": "Advertencias recuperables y estado de cambios sin guardar",
+      "$extensions": {
+        "mode": {
+          "light": "#B45309",
+          "dark": "#F59F00",
+          "high_contrast": "#FFD43B"
+        }
+      }
+    },
+    "success": {
+      "$type": "color",
+      "$value": "#1E7E34",
+      "$description": "Confirmacion de guardado local, integridad o pruebas en verde",
+      "$extensions": {
+        "mode": {
+          "light": "#1E7E34",
+          "dark": "#51CF66",
+          "high_contrast": "#00FF7F"
+        }
+      }
+    }
+  },
+  "typography": {
+    "fontFamily": {
+      "display": {
+        "$type": "fontFamily",
+        "$value": "\"Segoe UI Variable Display\", \"SF Pro Display\", \"Inter\", sans-serif` (titulos de ventana y secciones `16px-20px`, peso `600`)"
+      },
+      "ui": {
+        "$type": "fontFamily",
+        "$value": "\"Segoe UI Variable Text\", \"SF Pro Text\", \"Inter\", \"Noto Sans\", sans-serif` (controles, menus y grillas `12px-14px`; barra de estado `11px`)"
+      },
+      "mono": {
+        "$type": "fontFamily",
+        "$value": "\"JetBrains Mono\", \"Cascadia Mono\", \"SF Mono\", monospace` (rutas locales, logs, IDs y cifras tabulares `tnum`)"
+      }
+    }
+  }
+}
