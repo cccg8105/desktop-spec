@@ -5,7 +5,7 @@ description: "Piramide de verificacion nativa para monolitos modulares desktop: 
 
 # desktop-testing Skill
 
-Esta skill guia la validacion automatizada multi-nivel en `desktop-spec` sin dependencias de navegador ni servidor HTTP, cubriendo desde fronteras entre modulos hasta automatizacion visual nativa y accesibilidad del sistema operativo.
+Esta skill guia la validacion automatizada multi-nivel en `desktop-spec` sin servidor backend propio, cubriendo desde fronteras entre modulos hasta automatizacion visual nativa o WebView y accesibilidad del sistema operativo.
 
 ## Piramide de Verificacion Nativa (4 Niveles)
 
@@ -15,11 +15,11 @@ Esta skill guia la validacion automatizada multi-nivel en `desktop-spec` sin dep
 2. **Nivel 2 — Dominio, OCL y Persistencia Local (`.spec/templates/_template_domain_test.md`):**
    - Prueba casos de uso `UC-*`, reglas `[BR-XX]` e invariantes OCL (`pre`, `post`, `inv`) y excepciones tipadas `[EX-XX]`.
    - Usa bases SQLite en memoria o directorios temporales aislados para validar migraciones *on-startup*, respaldo previo del `.db`, rechazo de `schema_version` futuro, escritura atomica de archivos de proyecto, prevencion de Path Traversal y mocks de OS Keyring.
-   - Runners: `xUnit`/`NUnit` (.NET), `pytest` (Python), `JUnit 5` (JVM), `cargo test` (Rust), `GoogleTest` (C++).
+   - Runners: `xUnit`/`NUnit` (.NET), `pytest` (Python), `JUnit 5` (JVM), `cargo test` (Rust), `GoogleTest` (C++), `Vitest` / `cargo test` (Tauri), `Vitest` (Electron), `go test` (Wails), `flutter test` (Flutter), `XCTest` (Swift/macOS).
 3. **Nivel 3 — ViewModel / Presenter / Maquina de Estados FSM:**
    - Verifica transiciones entre `Idle`, `Loading`/`Busy`, `Empty`, `Error` y `Dirty`, traduccion de excepciones `[EX-XX]` a mensajes legibles y cumplimiento de invariantes (`NoDoubleSubmit`, `PreserveDraftOnError`, `RollbackOnOptimisticFailure`, `NoMainThreadBlock` con `CancellationToken` / corrutinas, `GuardUnsavedChangesOnClose`).
 4. **Nivel 4 — UI Headless, Automatizacion OS y Accesibilidad Nativa (`.spec/templates/_template_ui_test.md`):**
-   - Ejecuta pruebas de interfaz en modo headless o automatizacion de escritorio segun ecosistema: `Avalonia.Headless` / `FlaUI` (.NET), `pytest-qt` (Python), `Compose UI Test` / `TestFX` (JVM), `Slint` test harness / `Qt Test` (Rust/C++).
+   - Ejecuta pruebas de interfaz en modo headless o automatizacion de escritorio segun ecosistema: `Avalonia.Headless` / `FlaUI` (.NET), `pytest-qt` (Python), `Compose UI Test` / `TestFX` (JVM), `Slint` test harness / `Qt Test` (Rust/C++), `tauri-driver` (Tauri), `Playwright (Electron)` (Electron), `go test` / WebDriver (Wails), `flutter test` / `integration_test` (Flutter), `XCTest` / `XCUITest` (Swift/macOS).
    - Valida geometria minima de ventana `WIN-*`, modos `light` / `dark` / `high-contrast`, navegacion completa por teclado (`Tab`, `Enter`, `Escape`, atajos `Ctrl` vs `Cmd`), `FocusRestoration` y roles/etiquetas de accesibilidad del SO (UI Automation / AT-SPI / NSAccessibility).
 
 ---
@@ -36,5 +36,5 @@ Esta skill guia la validacion automatizada multi-nivel en `desktop-spec` sin dep
 ## Auditoria de Seguridad de Dependencias (`gh` + Auditor Local)
 Cuando el cambio atienda vulnerabilidades o actualice dependencias (`REQ-DESK-SEC-*`):
 1. Verifica `gh auth status` y extrae alertas via `gh api "repos/{owner}/{repo}/dependabot/alerts?state=open"` y `gh pr list --author "app/dependabot"`.
-2. Ejecuta el auditor local del ecosistema (`dotnet list package --vulnerable --include-transitive`, `pip-audit`, `cargo audit`, `./gradlew dependencyCheckAnalyze`).
+2. Ejecuta el auditor local del ecosistema (`dotnet list package --vulnerable --include-transitive`, `pip-audit`, `cargo audit`, `./gradlew dependencyCheckAnalyze`, `npm audit`, `govulncheck`, `flutter pub outdated` / `dart pub outdated`).
 3. Valida la suite completa de regresion y ejecuta `desktop-spec check --security` (o `dspec check --security`) antes de cerrar con `dspec resolve`.

@@ -5,7 +5,7 @@ description: "Guia el onboarding asistido de aplicaciones de escritorio nativas 
 
 # desktop-spec-bootstrap Skill
 
-Esta skill guia al agente en la adopcion ordenada de `desktop-spec` sobre repositorios desktop nativos existentes (`.NET`: `wpf`, `winui3`, `avalonia`, `maui-desktop`; `Python`: `pyside6`, `pyqt6`, `flet`; `JVM`: `compose-desktop`, `javafx`; `Rust / C++`: `rust-native`, `qt-cpp`) con deuda modular, UI acoplada a persistencia o documentacion desfasada.
+Esta skill guia al agente en la adopcion ordenada de `desktop-spec` sobre repositorios desktop nativos e hibridos existentes (`.NET`: `wpf`, `winui3`, `avalonia`, `maui-desktop`; `Python`: `pyside6`, `pyqt6`, `flet`; `JVM`: `compose-desktop`, `javafx`; `Rust / C++`: `rust-native`, `qt-cpp`; `Hibrido Web`: `tauri`, `electron`, `wails`; `Flutter`: `flutter-desktop`; `Apple`: `swift-macos`) con deuda modular, UI acoplada a persistencia o documentacion desfasada.
 
 ## Regla de Oro Anti-Perdida de Contexto
 1. **Memoria en Disco (`.spec/bootstrap-report.md`):** Registra y consulta el avance en una lista de verificacion GPS (`- [ ]` / `- [x]`) dividida por dominios, modulos y documentos tecnicos.
@@ -16,7 +16,7 @@ Esta skill guia al agente en la adopcion ordenada de `desktop-spec` sobre reposi
 ## Flujo Operativo en 4 Fases
 
 ### Fase 1: Diagnostico del Ecosistema y Linea Base
-1. Inspecciona los manifiestos reales (`*.csproj`, `pyproject.toml`, `setup.cfg`, `build.gradle.kts`, `build.gradle`, `pom.xml`, `Cargo.toml`, `CMakeLists.txt`), dependencias de toolkit UI, base de datos embebida y pruebas existentes.
+1. Inspecciona los manifiestos reales (`*.csproj`, `pyproject.toml`, `setup.cfg`, `build.gradle.kts`, `build.gradle`, `pom.xml`, `Cargo.toml`, `CMakeLists.txt`, `src-tauri/Cargo.toml`, `package.json`, `wails.json`, `pubspec.yaml`, `Package.swift`), dependencias de toolkit UI, base de datos embebida y pruebas existentes.
 2. Actualiza `.spec/config.yaml` y `docs/technical/tech-stack.md` reflejando el ecosistema real (`{{ECOSYSTEM_NAME}}` / `{{UI_TOOLKIT}}`), presupuestos desktop medibles y `test_baseline` (`none`, `partial`, `solid`).
 3. Si existe `graphify-out/graph.json`, analiza *God Nodes* y comunidades entre modulos; si no existe, sugiere generar el grafo respetando `.graphifyignore`.
 

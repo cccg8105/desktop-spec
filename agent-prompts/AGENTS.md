@@ -1,6 +1,6 @@
 # Instrucciones Canonicas para Agentes de IA (`desktop-spec` v{{FRAMEWORK_VERSION}})
 
-Este proyecto implementa la metodologia **`desktop-spec` v{{FRAMEWORK_VERSION}}** para aplicaciones de escritorio **nativas** estructuradas como **monolito modular standalone** (sin servidor backend propio ni WebView en `v1.0`), con soporte multi-ecosistema (`.NET`: `wpf`, `winui3`, `avalonia`, `maui-desktop`; `Python`: `pyside6`, `pyqt6`, `flet`; `JVM`: `compose-desktop`, `javafx`; `Rust / C++`: `rust-native`, `qt-cpp`) y compatibilidad multi-harness (Antigravity, Claude Code, Cursor, Windsurf). El agente actua como Arquitecto Desktop e Ingeniero de Software gobernando el ciclo de vida mediante el **Protocolo Gatekeeper de Dos Velocidades**.
+Este proyecto implementa la metodologia **`desktop-spec` v{{FRAMEWORK_VERSION}}** para aplicaciones de escritorio **nativas e hibridas** estructuradas como **monolito modular standalone**, con soporte multi-ecosistema (`.NET`: `wpf`, `winui3`, `avalonia`, `maui-desktop`; `Python`: `pyside6`, `pyqt6`, `flet`; `JVM`: `compose-desktop`, `javafx`; `Rust / C++`: `rust-native`, `qt-cpp`; `Hibrido Web`: `tauri`, `electron`, `wails`; `Flutter`: `flutter-desktop`; `Apple`: `swift-macos`) y compatibilidad multi-harness (Antigravity, Claude Code, Cursor, Windsurf). El agente actua como Arquitecto Desktop e Ingeniero de Software gobernando el ciclo de vida mediante el **Protocolo Gatekeeper de Dos Velocidades**.
 
 > **Nota de Entorno / Harness:** En `Claude Code`, `Cursor` y `Windsurf`, utiliza los comandos `/desk-grill`, `/desk-plan`, `/desk-bootstrap` y `/desk-resolve` (o `/desk-execute` en Windsurf). En `Antigravity`, utiliza los slash nativos `/grill-me`, `/plan`, `/diagnose` y `/code-review`. Las reglas especificas del harness viven bajo el bloque `<!-- DESKTOP-SPEC:START -->`..`<!-- DESKTOP-SPEC:END -->`.
 
@@ -45,7 +45,7 @@ Consulta `.spec/templates/functional-boundary-guidelines.md` antes de crear espe
    - Crea o actualiza `docs/functional/user-flows/UF-[MOD]-[NUM]-[slug].md` (`.spec/templates/_template_user_flow.md`) cuando haya interaccion de usuario o ventana, aplicando la Matriz Heuristica FSM (`.spec/templates/ui-contracts-guidelines.md`).
 2. **Diseno Nativo (`02a_plan_tokens_and_themes`):** Actualiza `docs/design/tokens-and-themes.md` (`.spec/templates/_template_design_tokens.md` y `design-guidelines.md`) manteniendo modos `light`, `dark`, `system` y `high-contrast`, densidad desktop (`compact`, `standard`, `comfortable`) y mapeo nativo (XAML/QSS/Compose/Slint).
 3. **Arquitectura Modular (`02b_plan_modular_architecture`):** Actualiza `docs/technical/modular-architecture.md` declarando modulos `MOD-*`, fachadas publicas, dependencia aciclica, Event Bus en memoria y modelo de concurrencia UI Thread vs Background Workers.
-4. **Ventanas, SO y Persistencia (`02c_plan_windowing_and_persistence`):** Actualiza `docs/technical/windowing-and-os-contracts.md` (`WIN-*`, single-instance lock, atajos Win/Linux/macOS, integraciones OS) y `docs/technical/local-persistence.md` (SQLite WAL/SQLCipher/DuckDB, rutas estandar del SO, migraciones on-startup con respaldo previo).
+4. **Ventanas, SO y Persistencia (`02c_plan_windowing_and_persistence`):** Actualiza `docs/technical/windowing-and-os-contracts.md` (`WIN-*`, single-instance lock, atajos Win/Linux/macOS, integraciones OS y, para perfiles hibridos WebView, la subseccion opcional de contratos `IPC / FFI`) y `docs/technical/local-persistence.md` (SQLite WAL/SQLCipher/DuckDB, rutas estandar del SO, migraciones on-startup con respaldo previo).
 5. **Presupuestos, Seguridad Local y Empaquetado (`02d_plan_packaging_release`):** Actualiza `docs/technical/tech-stack.md` (`cold_startup_ms`, `idle_ram_mb`, `ui_frame_budget_ms`, `installer_max_mb`, OS Keyring, Path Traversal, deserializacion segura) y `docs/technical/packaging-and-release.md` (matriz CI `windows-latest`/`macos-latest`/`ubuntu-latest`, Code Signing, Auto-Updater).
 6. **Historial Rolling Window:** Manten `## Historial de Revisiones (Ultimos Cambios)` con un maximo de **3 filas** por documento.
 
@@ -86,6 +86,9 @@ Si una solicitud toca un modulo listado en `docs/functional/index.md` bajo `Modu
    - `Python`: `pip-audit`
    - `JVM`: `./gradlew dependencyCheckAnalyze` o plugin equivalente de dependencias
    - `Rust`: `cargo audit`
+   - `Tauri / Electron`: `npm audit` (y `cargo audit` en el nucleo Rust de Tauri)
+   - `Wails`: `govulncheck`
+   - `Flutter`: `flutter pub outdated` / `dart pub outdated`
 3. **Clasificacion:**
    - Parche SemVer compatible o actualizacion de lockfile sin cambios de API -> **Fast-Track (`PATCH`)** bajo `REQ-DESK-SEC-XXX`.
    - Upgrade `MAJOR` con impacto en codigo fuente o contratos -> escala a **Carril Completo (`/plan` / `/desk-plan`)**.
