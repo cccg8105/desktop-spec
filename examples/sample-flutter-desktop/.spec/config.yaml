@@ -1,0 +1,44 @@
+# ==============================================================================
+# desktop-spec v0.1.0 - Configuracion del Proyecto (Monolito Modular Nativo)
+# ==============================================================================
+
+framework: desktop-spec
+version: "0.1.0"
+project_name: "sample-flutter-desktop"
+
+ecosystem:
+  name: "flutter-desktop"
+  family: "flutter"
+  ui_toolkit: "Flutter Desktop (Material 3)"
+  language: "Dart"
+  embedded_db: "SQLite (sqflite_common_ffi)"
+  unit_test_runner: "flutter test"
+  ui_test_runner: "flutter test"
+  manifest_file: "pubspec.yaml"
+  src_dir: "lib"
+  ui_dir: "lib/ui"
+  modules_dir: "lib/modules"
+  test_pattern: "test/{slug_snake}_test.dart"
+
+versioning_scheme: "semver"
+current_version: "0.1.0"
+current_milestone: "v0.2.0"
+
+version_file:
+  path: "pubspec.yaml"
+  format: "yaml"
+  field: "version"
+
+modules:
+  - tasks
+
+harnesses:
+  - antigravity
+
+paths:
+  user_flows_docs: "docs/functional/user-flows"
+  use_cases_docs: "docs/functional/use-cases"
+  design_docs: "docs/design"
+  technical_docs: "docs/technical"
+  backlog: "docs/backlog"
+  templates: ".spec/templates"

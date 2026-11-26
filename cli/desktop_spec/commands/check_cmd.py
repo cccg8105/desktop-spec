@@ -37,6 +37,13 @@ DESKTOP_SOURCE_EXTENSIONS = {
     ".qml",
     ".ui",
     ".qrc",
+    ".ts",
+    ".tsx",
+    ".js",
+    ".jsx",
+    ".go",
+    ".dart",
+    ".swift",
 }
 
 NON_SOURCE_PREFIXES = (

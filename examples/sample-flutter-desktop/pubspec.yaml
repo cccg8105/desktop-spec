@@ -1,0 +1,16 @@
+name: sample_flutter_desktop
+description: Sample Flutter Desktop application for desktop-spec
+publish_to: "none"
+version: 0.1.0
+
+environment:
+  sdk: ">=3.4.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  sqflite_common_ffi: ^2.3.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter

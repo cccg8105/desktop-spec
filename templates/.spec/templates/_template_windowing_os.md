@@ -54,6 +54,14 @@ flowchart TD
 - **`system_tray`:** Icono de bandeja solo si `window_topology` es `tray-resident` (en caso contrario `none`).
 - **`os_permissions`:** Ejecución sin privilegios elevados; permisos explícitos de lectura/escritura solo sobre rutas seleccionadas por el usuario o directorios estándar de la app.
 
+### Contratos IPC / FFI (Opcional para Shells Hibridos o Puentes Nativos)
+
+> *Aplicable cuando el proyecto utiliza un shell híbrido WebView o integraciones nativas por FFI. Proyectos nativos puros v1.0.0 pueden omitir o mantener esta subsección como `none`.*
+
+| Canal / Simbolo | Direccion | Contrato de Payload | Validacion de Seguridad |
+| :--- | :--- | :--- | :--- |
+| `app:get_status` | `UI -> Core` | `{}` -> `{ ready: bool, version: string }` | Permitido solo desde origen local confiable (`allowlist`); sin acceso directo a shell/FS arbitrario. |
+
 ---
 
 ## Historial de Revisiones (Últimos Cambios)

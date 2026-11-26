@@ -1,0 +1,15 @@
+[package]
+name = "sample-tauri-desktop"
+version = "0.1.0"
+description = "Sample Tauri desktop application for desktop-spec"
+authors = ["desktop-spec"]
+edition = "2021"
+
+[build-dependencies]
+tauri-build = { version = "2.0", features = [] }
+
+[dependencies]
+tauri = { version = "2.0", features = [] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+rusqlite = { version = "0.32", features = ["bundled"] }

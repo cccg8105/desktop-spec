@@ -1,0 +1,25 @@
+{
+  "color": {
+    "surface": {
+      "window": {
+        "$type": "color",
+        "$value": "#FFFFFF",
+        "$description": "Primary window background"
+      }
+    },
+    "text": {
+      "primary": {
+        "$type": "color",
+        "$value": "#111827",
+        "$description": "Primary text color"
+      }
+    },
+    "accent": {
+      "primary": {
+        "$type": "color",
+        "$value": "#2563EB",
+        "$description": "Primary accent color"
+      }
+    }
+  }
+}

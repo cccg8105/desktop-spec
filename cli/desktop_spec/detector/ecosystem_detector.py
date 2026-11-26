@@ -215,6 +215,101 @@ ECOSYSTEM_PROFILES: List[Dict[str, str]] = [
         "modules_dir": "src/modules",
         "test_pattern": "tests/{slug_snake}_test.cpp",
     },
+    {
+        "ecosystem": "tauri",
+        "runtime_label": "Tauri (Rust + WebView)",
+        "family": "hybrid-web",
+        "ui_toolkit": "WebView (React / TypeScript)",
+        "language": "Rust / TypeScript",
+        "embedded_db": "SQLite (WAL)",
+        "unit_test_runner": "cargo test / Vitest",
+        "ui_test_runner": "tauri-driver (WebDriver)",
+        "manifest": "src-tauri/Cargo.toml",
+        "version_file": "src-tauri/Cargo.toml",
+        "format": "toml",
+        "field": "version",
+        "src_ext": ".ts",
+        "src_dir": "src",
+        "ui_dir": "src/components",
+        "modules_dir": "src-tauri/src",
+        "test_pattern": "src-tauri/tests/{slug_snake}_test.rs",
+    },
+    {
+        "ecosystem": "electron",
+        "runtime_label": "Electron (Node.js + Chromium)",
+        "family": "hybrid-web",
+        "ui_toolkit": "Chromium (React / TypeScript)",
+        "language": "TypeScript / Node.js",
+        "embedded_db": "SQLite (better-sqlite3 WAL)",
+        "unit_test_runner": "Vitest / Jest",
+        "ui_test_runner": "Playwright (Electron)",
+        "manifest": "package.json",
+        "version_file": "package.json",
+        "format": "json",
+        "field": "version",
+        "src_ext": ".ts",
+        "src_dir": "src",
+        "ui_dir": "src/renderer",
+        "modules_dir": "src/main",
+        "test_pattern": "tests/{slug}.spec.ts",
+    },
+    {
+        "ecosystem": "wails",
+        "runtime_label": "Wails (Go + WebView)",
+        "family": "hybrid-web",
+        "ui_toolkit": "WebView (React / TypeScript)",
+        "language": "Go / TypeScript",
+        "embedded_db": "SQLite (modernc.org/sqlite WAL)",
+        "unit_test_runner": "go test",
+        "ui_test_runner": "Playwright",
+        "manifest": "wails.json",
+        "version_file": "wails.json",
+        "format": "json",
+        "field": "version",
+        "src_ext": ".go",
+        "src_dir": ".",
+        "ui_dir": "frontend/src",
+        "modules_dir": "internal",
+        "test_pattern": "internal/{slug_snake}_test.go",
+    },
+    {
+        "ecosystem": "flutter-desktop",
+        "runtime_label": "Flutter Desktop",
+        "family": "flutter",
+        "ui_toolkit": "Flutter (Material / Fluent / macOS)",
+        "language": "Dart",
+        "embedded_db": "SQLite (drift / sqflite_common_ffi)",
+        "unit_test_runner": "flutter test",
+        "ui_test_runner": "integration_test",
+        "manifest": "pubspec.yaml",
+        "version_file": "pubspec.yaml",
+        "format": "yaml",
+        "field": "version",
+        "src_ext": ".dart",
+        "src_dir": "lib",
+        "ui_dir": "lib/ui",
+        "modules_dir": "lib/modules",
+        "test_pattern": "test/{slug_snake}_test.dart",
+    },
+    {
+        "ecosystem": "swift-macos",
+        "runtime_label": "SwiftUI / AppKit (macOS)",
+        "family": "apple",
+        "ui_toolkit": "SwiftUI / AppKit",
+        "language": "Swift",
+        "embedded_db": "SQLite (GRDB.swift) / SwiftData",
+        "unit_test_runner": "XCTest / Swift Testing",
+        "ui_test_runner": "XCUITest",
+        "manifest": "Package.swift",
+        "version_file": "Package.swift",
+        "format": "regex",
+        "field": "version",
+        "src_ext": ".swift",
+        "src_dir": "Sources",
+        "ui_dir": "Sources/Views",
+        "modules_dir": "Sources/Modules",
+        "test_pattern": "Tests/{slug_pascal}Tests.swift",
+    },
 ]
 
 _PROFILE_MAP: Dict[str, Dict[str, str]] = {
@@ -716,6 +811,8 @@ def _detect_manifest_family_and_profile(
             return ecosystem_key, overrides
         if ecosystem_key == "rust-native":
             return ecosystem_key, _detect_rust_details(project_root)
+        if family in ("hybrid-web", "flutter", "apple"):
+            return ecosystem_key, {}
         return ecosystem_key, _detect_qt_cpp_details(project_root)
 
     if csproj_files:
@@ -724,6 +821,28 @@ def _detect_manifest_family_and_profile(
         return _detect_python_details(project_root, None)
     if has_gradle_kts or has_gradle or has_pom:
         return _detect_jvm_details(project_root, None)
+    if (
+        (project_root / "src-tauri" / "Cargo.toml").is_file()
+        or (project_root / "src-tauri" / "tauri.conf.json").is_file()
+        or (project_root / "tauri.conf.json").is_file()
+    ):
+        return "tauri", {}
+    if (project_root / "wails.json").is_file():
+        return "wails", {}
+    if (project_root / "package.json").is_file():
+        pkg_text = _read_text_safe(project_root / "package.json").lower()
+        if "@tauri-apps" in pkg_text:
+            return "tauri", {}
+        if "electron" in pkg_text:
+            return "electron", {}
+    if (project_root / "go.mod").is_file():
+        gomod_text = _read_text_safe(project_root / "go.mod").lower()
+        if "wails" in gomod_text:
+            return "wails", {}
+    if (project_root / "pubspec.yaml").is_file():
+        return "flutter-desktop", {}
+    if (project_root / "Package.swift").is_file():
+        return "swift-macos", {}
     if has_cargo:
         return "rust-native", _detect_rust_details(project_root)
     if has_cmake:
@@ -838,6 +957,14 @@ def _has_known_manifest(project_root: Path) -> bool:
             "pom.xml",
             "Cargo.toml",
             "CMakeLists.txt",
+            "src-tauri/Cargo.toml",
+            "src-tauri/tauri.conf.json",
+            "tauri.conf.json",
+            "package.json",
+            "wails.json",
+            "go.mod",
+            "pubspec.yaml",
+            "Package.swift",
         )
     )
 

@@ -134,6 +134,15 @@ def extract_version(manifest_path: Union[str, Path], file_format: str) -> Option
                 return ver_match.group(1).strip().lstrip("vV")
         return None
 
+    if file_format == "yaml":
+        match = re.search(
+            r'(?m)^[ \t]*version[ \t]*:[ \t]*["\']?([0-9]+\.[0-9]+\.[0-9]+(?:[+-][^\s#"\']+)?)["\']?',
+            content,
+        )
+        if match:
+            return match.group(1).strip().lstrip("vV")
+        return None
+
     generic_match = re.search(
         r'version["\']?\s*[:=]\s*["\']([^"\']+)["\']', content, re.IGNORECASE
     )
@@ -259,6 +268,16 @@ def update_version(
                 return True
         return False
 
+    if file_format == "yaml":
+        pattern = r'(?m)^([ \t]*version[ \t]*:[ \t]*["\']?)([0-9]+\.[0-9]+\.[0-9]+(?:[+-][^\s#"\']+)?)([ \t]*["\']?)'
+        if re.search(pattern, content):
+            new_content = re.sub(
+                pattern, rf"\g<1>{clean_ver}\g<3>", content, count=1
+            )
+            path.write_text(new_content, encoding="utf-8")
+            return True
+        return False
+
     fallback_pattern = r'(version["\']?\s*[:=]\s*["\'])[^"\']+(["\'])'
     if re.search(fallback_pattern, content, re.IGNORECASE):
         new_content = re.sub(
@@ -272,6 +291,42 @@ def update_version(
         return True
 
     return False
+
+
+def _infer_manifest_format(path: Path) -> str:
+    name = path.name.lower()
+    if name.endswith(".json"):
+        return "json"
+    if name.endswith(".toml"):
+        return "toml"
+    if name.endswith((".yaml", ".yml")):
+        return "yaml"
+    if name.endswith((".csproj", ".xml")):
+        return "xml"
+    if name == "cmakelists.txt":
+        return "cmake"
+    if name.startswith("build.gradle"):
+        return "gradle"
+    if name == "setup.cfg":
+        return "cfg"
+    return "regex"
+
+
+def sync_multi_manifest_versions(
+    paths: List[Union[str, Path, Tuple[Union[str, Path], str]]],
+    new_version: str,
+) -> dict:
+    """Sincroniza la version en multiples manifiestos de proyectos hibridos."""
+    results = {}
+    for item in paths:
+        if isinstance(item, tuple):
+            raw_path, file_format = item
+        else:
+            raw_path = item
+            file_format = _infer_manifest_format(Path(raw_path))
+        p = Path(raw_path)
+        results[str(p)] = update_version(p, file_format, new_version)
+    return results
 
 
 def parse_version_tuple(version_str: str) -> Tuple[int, ...]:
