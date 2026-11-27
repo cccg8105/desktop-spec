@@ -5,7 +5,7 @@ description: "Orquestador completo del ciclo de vida desktop nativo Spec-Driven 
 
 # desktop-spec Skill
 
-Esta skill gobierna el ciclo completo de ingenieria para aplicaciones de escritorio **nativas** estructuradas como **monolito modular standalone** bajo **`desktop-spec`**, garantizando aislamiento entre modulos `MOD-*`, trazabilidad dual `UF-*` -> `UC-*`, seguridad local y verificacion multi-nivel.
+Esta skill gobierna el ciclo completo de ingenieria para aplicaciones de escritorio **nativas e hibridas** estructuradas como **monolito modular standalone** bajo **`desktop-spec`** (`.NET`: `wpf`, `winui3`, `avalonia`, `maui-desktop`; `Python`: `pyside6`, `pyqt6`, `flet`; `JVM`: `compose-desktop`, `javafx`; `Rust / C++`: `rust-native`, `qt-cpp`; `Hibrido Web`: `tauri`, `electron`, `wails`; `Flutter`: `flutter-desktop`; `Apple`: `swift-macos`), garantizando aislamiento entre modulos `MOD-*`, trazabilidad dual `UF-*` -> `UC-*`, seguridad local y verificacion multi-nivel.
 
 ## Regla de Oro (Gatekeeper de Dos Velocidades)
 **PROHIBIDO** modificar codigo fuente (`src/`, `app/`, `modules/`, `views/`, `ui/`, `tests/`) sin un `REQ-DESK-*` activo en `docs/backlog/pending.md` aprobado por el usuario.
@@ -29,5 +29,5 @@ Esta skill gobierna el ciclo completo de ingenieria para aplicaciones de escrito
 6. **Expansión Progresiva Brownfield:** Si el cambio toca un modulo en `Modulos Legados Detectados` dentro de `docs/functional/index.md`, documenta primero su comportamiento *As-Is* antes de planificar la evolucion *To-Be*.
 7. **Seguridad Local, Dependabot (`gh`), `/code-review` y Cierre:**
    - Exige OS Keyring para credenciales, canonizacion contra Path Traversal y deserializacion segura.
-   - Ante alertas de dependencias, verifica `gh auth status`, consulta `gh api "repos/{owner}/{repo}/dependabot/alerts?state=open"` y `gh pr list --author "app/dependabot"`, ejecuta el auditor local (`dotnet list package --vulnerable`, `pip-audit`, `cargo audit`, `gradle`) y valida con `desktop-spec check --security` (o `dspec check --security`), escalando upgrades `MAJOR` con impacto en codigo a `/plan`.
+   - Ante alertas de dependencias, verifica `gh auth status`, consulta `gh api "repos/{owner}/{repo}/dependabot/alerts?state=open"` y `gh pr list --author "app/dependabot"`, ejecuta el auditor local (`dotnet list package --vulnerable`, `pip-audit`, `cargo audit`, `gradle`, `npm audit`, `govulncheck`, `flutter pub outdated` / `dart pub outdated`) y valida con `desktop-spec check --security` (o `dspec check --security`), escalando upgrades `MAJOR` con impacto en codigo a `/plan`.
    - Ejecuta tests multi-nivel, realiza `/code-review` del diff, corre `dspec sync` y `dspec check`, actualiza `graphify update` respetando `.graphifyignore` y cierra con `dspec resolve <REQ-DESK-ID> [--bump]`.

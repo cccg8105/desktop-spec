@@ -10,13 +10,17 @@
 
 Úsalo para nuevas funcionalidades, nuevas ventanas/flujos o cambios en contratos de dominio o persistencia local.
 
-1. **Requerimiento:** `dspec req:new REQ-DESK-002 --title "..." --type MINOR --domain billing`
+1. **Requerimiento:**
+   ```bash
+   dspec req:new "Agregar facturacion local y exportacion de recibos" --impact MINOR --module billing --scope full-module
+   ```
+   Esto autogenera el identificador (por ejemplo, `REQ-DESK-BILLING-001`) en `docs/backlog/pending.md`.
 2. **Frontera `UF -> UC`:**
-   - Define el flujo de ventana e interacción en `UF-*` (`docs/functional/flows/`).
+   - Define el flujo de ventana e interacción en `UF-*` (`docs/functional/user-flows/`).
    - Define la lógica de negocio en `UC-*` (`docs/functional/use-cases/`).
    - Mantén la delegación unidireccional: `UF-*` invoca a `UC-*`; `UC-*` nunca importa ni referencia componentes de UI.
 3. **Sincronización y Validación:** `dspec sync && dspec check`
-4. **Implementación y Cierre:** `dspec resolve REQ-DESK-002 --bump`
+4. **Implementación y Cierre:** `dspec resolve REQ-DESK-BILLING-001 --bump`
 
 ---
 
@@ -27,10 +31,10 @@
 1. **Diagnóstico:** Aplica la metodología `/diagnose` (reproducir, aislar, formular hipótesis, instrumentar y prueba de regresión) antes de modificar código.
 2. **Requerimiento ligero:**
    ```bash
-   dspec req:new REQ-DESK-003 --title "Corregir bloqueo en hilo UI al exportar CSV" --type PATCH --domain export
+   dspec req:new "Corregir bloqueo en hilo UI al exportar CSV" --impact PATCH --module export
    ```
-   En modo `PATCH`, no se exige crear un nuevo `UC-*`.
-3. **Validación y Cierre:** `dspec check --staged` y luego `dspec resolve REQ-DESK-003 --bump`.
+   En modo `PATCH` (o con `--fast-track`), no se exige crear un nuevo `UC-*`.
+3. **Validación y Cierre:** `dspec check --staged` y luego `dspec resolve REQ-DESK-EXPORT-001 --bump`.
 
 ---
 
@@ -41,8 +45,8 @@ Además de `dspec check`, utiliza los siguientes flags según la etapa del cambi
 | Flag | Propósito |
 | :--- | :--- |
 | `--staged` | Bloquea *commits fantasma* (cambios en código fuente sin `REQ-DESK-*` activo) y valida fronteras de módulo sobre los archivos en *staging* de Git. |
-| `--strict-tokens` | Detecta colores hexadecimales quemados (`#RRGGBB`) en archivos de UI fuera de los archivos de tema/tokens autorizados. |
-| `--security` | Ejecuta auditoría de seguridad local (por ejemplo, revisión de dependencias/configuración de secretos y superficie local). |
+| `--strict-tokens` | Detecta colores hexadecimales quemados (`#RRGGBB` / `#AARRGGBB`) en archivos de UI fuera de los archivos de tema/tokens autorizados. |
+| `--security` | Consulta alertas abiertas de Dependabot en GitHub mediante GitHub CLI (`gh api repos/{owner}/{repo}/dependabot/alerts?state=open&per_page=100`), complementado con el auditor local del ecosistema. |
 
 Ejemplo combinado antes de un release:
 

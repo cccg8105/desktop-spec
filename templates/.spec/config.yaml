@@ -8,8 +8,8 @@ project_name: "{{PROJECT_NAME}}"
 
 # Perfil de ecosistema desktop nativo detectado o seleccionado en init
 ecosystem:
-  name: "{{ECOSYSTEM_NAME}}" # wpf | winui3 | avalonia | maui-desktop | pyside6 | pyqt6 | flet | compose-desktop | javafx | rust-native | qt-cpp
-  family: "{{ECOSYSTEM_FAMILY}}" # dotnet | python | jvm | rust-cpp
+  name: "{{ECOSYSTEM_NAME}}" # wpf | winui3 | avalonia | maui-desktop | pyside6 | pyqt6 | flet | compose-desktop | javafx | rust-native | qt-cpp | tauri | electron | wails | flutter-desktop | swift-macos
+  family: "{{ECOSYSTEM_FAMILY}}" # dotnet | python | jvm | rust-cpp | hybrid-web | flutter | apple
   ui_toolkit: "{{UI_TOOLKIT}}"
   language: "{{LANGUAGE_NAME}}"
   embedded_db: "{{EMBEDDED_DB}}"
@@ -29,7 +29,7 @@ current_milestone: "{{MILESTONE_VERSION}}"
 # Archivo manifiesto del codigo donde se sincroniza la version de la app
 version_file:
   path: "{{MANIFEST_FILE}}"
-  format: "xml" # xml | toml | gradle | cfg | cmake | plain | json
+  format: "xml" # xml | toml | gradle | cfg | cmake | plain | json | yaml | regex
   field: "version"
 
 # Modulos de dominio del monolito modular
