@@ -19,6 +19,7 @@ except ImportError:
 
 from desktop_spec.commands.bootstrap_cmd import run_bootstrap
 from desktop_spec.commands.init_cmd import run_init
+from desktop_spec.commands.resolve_cmd import run_resolve
 from desktop_spec.commands.sync_index_cmd import run_sync_index
 from desktop_spec.commands.update_cmd import run_update
 
@@ -292,6 +293,179 @@ class TestUpdateAndBrownfield(unittest.TestCase):
             payload = json.loads(tokens_json.read_text(encoding="utf-8"))
             self.assertIn("color", payload)
             self.assertGreater(len(payload["color"]), 0)
+
+    def test_resolve_bump_multi_manifest_tauri(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            repo = Path(tmp) / "tauri-multi-manifest"
+            (repo / "src-tauri").mkdir(parents=True)
+            (repo / "src-tauri" / "Cargo.toml").write_text(
+                '[package]\nname = "tauri-app"\nversion = "0.1.0"\n\n[dependencies]\ntauri = "2"\n',
+                encoding="utf-8",
+            )
+            (repo / "src-tauri" / "tauri.conf.json").write_text(
+                json.dumps({"productName": "tauri-app", "version": "0.1.0"}, indent=2),
+                encoding="utf-8",
+            )
+            (repo / "package.json").write_text(
+                json.dumps(
+                    {
+                        "name": "tauri-app",
+                        "version": "0.1.0",
+                        "dependencies": {"@tauri-apps/api": "^2.0.0"},
+                    },
+                    indent=2,
+                ),
+                encoding="utf-8",
+            )
+
+            run_init(repo, harness="antigravity", versioning="semver")
+
+            pending_file = repo / "docs" / "backlog" / "pending.md"
+            pending_txt = pending_file.read_text(encoding="utf-8")
+            pending_txt += (
+                "\n### [REQ-DESK-001] Soporte multi-ventana\n"
+                "- **Prioridad:** P1\n"
+                "- **Tipo:** MINOR\n"
+                "- **Alcance:** full-module\n"
+                "- **Versión Objetivo:** `v0.2.0`\n"
+                "- **Flujos UX:** `N/A`\n"
+                "- **Casos de Uso:** `N/A`\n"
+                "- **Referencias Técnicas:** `docs/technical/modular-architecture.md`\n"
+                "- **Módulos Afectados:** `core`\n"
+                "#### Criterios de Aceptación:\n"
+                "- [ ] Cumple contrato\n"
+            )
+            pending_file.write_text(pending_txt, encoding="utf-8")
+
+            ok = run_resolve(repo, "REQ-DESK-001", auto_bump=True)
+            self.assertTrue(ok)
+
+            cargo_txt = (repo / "src-tauri" / "Cargo.toml").read_text(encoding="utf-8")
+            self.assertIn('version = "0.2.0"', cargo_txt)
+
+            tauri_conf = json.loads((repo / "src-tauri" / "tauri.conf.json").read_text(encoding="utf-8"))
+            self.assertEqual(tauri_conf["version"], "0.2.0")
+
+            pkg_json = json.loads((repo / "package.json").read_text(encoding="utf-8"))
+            self.assertEqual(pkg_json["version"], "0.2.0")
+
+            cfg_txt = (repo / ".spec" / "config.yaml").read_text(encoding="utf-8")
+            self.assertIn('current_version: "0.2.0"', cfg_txt)
+            self.assertIn('current_milestone: "v0.3.0"', cfg_txt)
+
+            updated_pending = pending_file.read_text(encoding="utf-8")
+            self.assertIn("## Milestone v0.3.0", updated_pending)
+            self.assertNotIn("## Milestone v0.2.0", updated_pending)
+
+            backlog_idx = (repo / "docs" / "backlog" / "index.md").read_text(encoding="utf-8")
+            self.assertIn("- **Version Actual:** `v0.2.0`", backlog_idx)
+            self.assertIn("- **Milestone Activo:** `v0.3.0`", backlog_idx)
+            self.assertIn("## Resumen del Milestone Activo (`v0.3.0`)", backlog_idx)
+
+            # Verificar proteccion anti-downgrade contra manifiesto acompanante mas alto
+            pkg_json["version"] = "0.5.0"
+            (repo / "package.json").write_text(json.dumps(pkg_json, indent=2), encoding="utf-8")
+            updated_pending += (
+                "\n### [REQ-DESK-002] Fix menor\n"
+                "- **Prioridad:** P2\n"
+                "- **Tipo:** PATCH\n"
+                "- **Alcance:** domain-only\n"
+                "- **Versión Objetivo:** `v0.3.0`\n"
+                "#### Criterios de Aceptación:\n"
+                "- [ ] Corregido\n"
+            )
+            pending_file.write_text(updated_pending, encoding="utf-8")
+
+            ok2 = run_resolve(repo, "REQ-DESK-002", auto_bump=True)
+            self.assertTrue(ok2)
+            self.assertIn('version = "0.2.0"', (repo / "src-tauri" / "Cargo.toml").read_text(encoding="utf-8"))
+
+    def test_bootstrap_brownfield_tauri(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            repo = Path(tmp) / "tauri-brownfield"
+            (repo / "src-tauri" / "src" / "inventory").mkdir(parents=True)
+            (repo / "src-tauri" / "src" / "db").mkdir(parents=True)
+            (repo / "frontend" / "src" / "stores").mkdir(parents=True)
+
+            (repo / "src-tauri" / "Cargo.toml").write_text(
+                '[package]\nname = "tauri-brownfield"\nversion = "0.4.0"\n\n[dependencies]\ntauri = "2"\n',
+                encoding="utf-8",
+            )
+            (repo / "src-tauri" / "tauri.conf.json").write_text(
+                json.dumps({"productName": "tauri-brownfield", "version": "0.4.0"}),
+                encoding="utf-8",
+            )
+            (repo / "package.json").write_text(
+                json.dumps({"name": "tauri-brownfield", "version": "0.4.0", "dependencies": {"@tauri-apps/api": "^2.0.0"}}),
+                encoding="utf-8",
+            )
+            (repo / "src-tauri" / "src" / "inventory" / "commands.rs").write_text(
+                "pub fn list_items() {}\n", encoding="utf-8"
+            )
+            (repo / "src-tauri" / "src" / "db" / "rusqlite_repo.rs").write_text(
+                "pub fn open_db() {}\n", encoding="utf-8"
+            )
+            (repo / "frontend" / "src" / "App.tsx").write_text(
+                "export function App() { return null; }\n", encoding="utf-8"
+            )
+            (repo / "frontend" / "src" / "stores" / "appStore.ts").write_text(
+                "export const appStore = {};\n", encoding="utf-8"
+            )
+            (repo / "frontend" / "src" / "App.test.tsx").write_text(
+                "test('renders', () => {});\n", encoding="utf-8"
+            )
+
+            run_init(repo, harness="antigravity")
+            report_path = run_bootstrap(repo)
+            report_txt = report_path.read_text(encoding="utf-8")
+
+            self.assertIn("ecosystem: tauri", report_txt)
+            self.assertIn("`inventory`", report_txt)
+            self.assertIn("frontend/src/App.tsx", report_txt)
+            self.assertIn("frontend/src/stores/appStore.ts", report_txt)
+            self.assertIn("src-tauri/src/db/rusqlite_repo.rs", report_txt)
+            self.assertIn("src-tauri/tauri.conf.json", report_txt)
+            self.assertIn("1 unit, 0 UI", report_txt)
+
+    def test_bootstrap_brownfield_flutter_desktop(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            repo = Path(tmp) / "flutter-brownfield"
+            (repo / "windows").mkdir(parents=True)
+            (repo / "lib" / "modules" / "billing").mkdir(parents=True)
+            (repo / "lib" / "ui").mkdir(parents=True)
+            (repo / "lib" / "data").mkdir(parents=True)
+            (repo / "test").mkdir(parents=True)
+
+            (repo / "pubspec.yaml").write_text(
+                "name: flutter_brownfield\nversion: 1.2.0+1\ndependencies:\n  flutter:\n    sdk: flutter\n",
+                encoding="utf-8",
+            )
+            (repo / "lib" / "modules" / "billing" / "billing_service.dart").write_text(
+                "class BillingService {}\n", encoding="utf-8"
+            )
+            (repo / "lib" / "ui" / "home_page.dart").write_text(
+                "class HomePage {}\n", encoding="utf-8"
+            )
+            (repo / "lib" / "ui" / "billing_cubit.dart").write_text(
+                "class BillingCubit {}\n", encoding="utf-8"
+            )
+            (repo / "lib" / "data" / "drift_database.dart").write_text(
+                "class AppDatabase {}\n", encoding="utf-8"
+            )
+            (repo / "test" / "billing_test.dart").write_text(
+                "void main() {}\n", encoding="utf-8"
+            )
+
+            run_init(repo, harness="antigravity")
+            report_path = run_bootstrap(repo)
+            report_txt = report_path.read_text(encoding="utf-8")
+
+            self.assertIn("ecosystem: flutter-desktop", report_txt)
+            self.assertIn("`billing`", report_txt)
+            self.assertIn("lib/ui/home_page.dart", report_txt)
+            self.assertIn("lib/ui/billing_cubit.dart", report_txt)
+            self.assertIn("lib/data/drift_database.dart", report_txt)
+            self.assertIn("1 unit, 0 UI", report_txt)
 
 
 if __name__ == "__main__":

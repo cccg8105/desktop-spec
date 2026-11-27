@@ -312,6 +312,106 @@ class TestCliWorkflow(unittest.TestCase):
         self.assertTrue(run_resolve(self.tmp_dir, req_id2, auto_bump=True, force_version=True))
         self.assertEqual(extract_version(self.tmp_dir / "App.csproj", "xml"), "1.2.0")
 
+    def test_staged_docs_and_undeclared_source_bypass_is_blocked(self) -> None:
+        run_init(target_dir=self.tmp_dir, ecosystem="avalonia", harness="antigravity")
+        subprocess.run(["git", "init"], cwd=str(self.tmp_dir), check=True, capture_output=True)
+        subprocess.run(["git", "config", "user.email", "test@example.com"], cwd=str(self.tmp_dir), check=True)
+        subprocess.run(["git", "config", "user.name", "Test"], cwd=str(self.tmp_dir), check=True)
+
+        run_new_req(
+            project_root=self.tmp_dir,
+            title="Declarar archivo inicial",
+            module="core",
+            impact="PATCH",
+            fast_track=True,
+        )
+        undeclared_file = self.tmp_dir / "src" / "Modules" / "core" / "GhostHelper.cs"
+        undeclared_file.parent.mkdir(parents=True, exist_ok=True)
+        undeclared_file.write_text("public class GhostHelper {}\n", encoding="utf-8")
+
+        subprocess.run(
+            ["git", "add", "docs/backlog/pending.md", "src/Modules/core/GhostHelper.cs"],
+            cwd=str(self.tmp_dir),
+            check=True,
+        )
+        self.assertFalse(run_check(self.tmp_dir, check_staged=True))
+
+    def test_staged_root_source_blocked_while_root_setup_ignored(self) -> None:
+        run_init(target_dir=self.tmp_dir, ecosystem="pyside6", harness="antigravity")
+        subprocess.run(["git", "init"], cwd=str(self.tmp_dir), check=True, capture_output=True)
+        subprocess.run(["git", "config", "user.email", "test@example.com"], cwd=str(self.tmp_dir), check=True)
+        subprocess.run(["git", "config", "user.name", "Test"], cwd=str(self.tmp_dir), check=True)
+
+        setup_py = self.tmp_dir / "setup.py"
+        setup_py.write_text("from setuptools import setup\nsetup(name='demo')\n", encoding="utf-8")
+        subprocess.run(["git", "add", "setup.py"], cwd=str(self.tmp_dir), check=True)
+        self.assertTrue(run_check(self.tmp_dir, check_staged=True))
+
+        main_py = self.tmp_dir / "main.py"
+        main_py.write_text("print('hello desktop')\n", encoding="utf-8")
+        subprocess.run(["git", "add", "main.py"], cwd=str(self.tmp_dir), check=True)
+        self.assertFalse(run_check(self.tmp_dir, check_staged=True))
+
+    def test_strict_tokens_wave5_profiles_and_ignores_configs(self) -> None:
+        run_init(target_dir=self.tmp_dir, ecosystem="tauri", harness="antigravity")
+
+        # Config files with hex colors must be ignored
+        src_dir = self.tmp_dir / "src"
+        src_dir.mkdir(parents=True, exist_ok=True)
+        (src_dir / "tailwind.config.js").write_text("module.exports = { theme: { primary: '#123456' } };\n", encoding="utf-8")
+        (src_dir / "vite.config.ts").write_text("export default { define: { COLOR: '#654321' } };\n", encoding="utf-8")
+        (src_dir / "postcss.config.mjs").write_text("export default { color: '#ABCDEF' };\n", encoding="utf-8")
+        self.assertTrue(run_check(self.tmp_dir, strict_tokens=True))
+
+        # Burned hex in lib/ui/*.dart must fail
+        dart_view = self.tmp_dir / "lib" / "ui" / "home_page.dart"
+        dart_view.parent.mkdir(parents=True, exist_ok=True)
+        dart_view.write_text("const bg = '#FF00AA';\n", encoding="utf-8")
+        self.assertFalse(run_check(self.tmp_dir, strict_tokens=True))
+        dart_view.unlink()
+
+        # Burned hex in src/components/*.tsx must fail
+        tsx_view = self.tmp_dir / "src" / "components" / "Button.tsx"
+        tsx_view.parent.mkdir(parents=True, exist_ok=True)
+        tsx_view.write_text("export const style = { color: '#AA11BB' };\n", encoding="utf-8")
+        self.assertFalse(run_check(self.tmp_dir, strict_tokens=True))
+        tsx_view.unlink()
+
+        # Burned hex in Sources/Views/*.swift must fail
+        swift_view = self.tmp_dir / "Sources" / "Views" / "ContentView.swift"
+        swift_view.parent.mkdir(parents=True, exist_ok=True)
+        swift_view.write_text("let accent = \"#11AA22\"\n", encoding="utf-8")
+        self.assertFalse(run_check(self.tmp_dir, strict_tokens=True))
+
+    def test_frontmatter_additional_fields_and_technical_h2_validation(self) -> None:
+        run_init(target_dir=self.tmp_dir, ecosystem="avalonia", harness="antigravity")
+        self.assertTrue(run_check(self.tmp_dir))
+
+        tokens_path = self.tmp_dir / "docs" / "design" / "tokens-and-themes.md"
+        orig_tokens = tokens_path.read_text(encoding="utf-8")
+
+        # Invalid density_modes must fail
+        tokens_path.write_text(orig_tokens.replace("- compact", "- ultra-dense"), encoding="utf-8")
+        self.assertFalse(run_check(self.tmp_dir))
+
+        # Invalid window_chrome must fail
+        tokens_path.write_text(orig_tokens.replace("titlebar_style: native", "titlebar_style: floating-magic"), encoding="utf-8")
+        self.assertFalse(run_check(self.tmp_dir))
+        tokens_path.write_text(orig_tokens, encoding="utf-8")
+
+        # Invalid target_platforms in packaging-and-release.md must fail
+        pkg_path = self.tmp_dir / "docs" / "technical" / "packaging-and-release.md"
+        orig_pkg = pkg_path.read_text(encoding="utf-8")
+        pkg_path.write_text(
+            orig_pkg.replace("branching_model: github-flow", "branching_model: github-flow\ntarget_platforms:\n  - android"),
+            encoding="utf-8",
+        )
+        self.assertFalse(run_check(self.tmp_dir))
+
+        # Missing ## heading in technical doc body must fail
+        pkg_path.write_text("---\nartifact_type: packaging-and-release\nbranching_model: github-flow\n---\n\n# Solo H1\n", encoding="utf-8")
+        self.assertFalse(run_check(self.tmp_dir))
+
     def test_cli_entrypoint_version(self) -> None:
         proc = subprocess.run(
             [sys.executable, str(CLI_DIR / "main.py"), "--version"],

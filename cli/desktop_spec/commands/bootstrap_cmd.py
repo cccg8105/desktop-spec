@@ -41,8 +41,19 @@ SKIP_DIRS = {
 }
 
 VIEW_EXTS = {".xaml", ".axaml", ".fxml", ".qml", ".ui", ".slint"}
+WEB_VIEW_EXTS = {".tsx", ".jsx", ".svelte", ".vue"}
 DB_EXTS = {".db", ".sqlite", ".sqlite3"}
-PACKAGING_EXTS = {".wxs", ".iss", ".desktop"}
+PACKAGING_EXTS = {".wxs", ".iss", ".desktop", ".entitlements"}
+STATEHOLDER_KEYWORDS = (
+    "viewmodel",
+    "presenter",
+    "controller",
+    "bloc",
+    "cubit",
+    "notifier",
+    "store",
+    "provider",
+)
 GENERIC_DESKTOP_FOLDERS = {
     "src",
     "app",
@@ -103,17 +114,19 @@ def _scan_desktop_inventory(project_root: Path) -> Dict[str, List[str]]:
 
         is_ui_test = bool(
             re.search(r"(uitest|headless|flaui|testfx|appium|pytest_qt)", low_name)
-            or low_rel.startswith(("ui_tests/", "ui-tests/", "e2e/"))
+            or low_rel.startswith(("ui_tests/", "ui-tests/", "e2e/", "integration_test/"))
             or "/ui_tests/" in low_rel
         )
         is_unit_test = bool(
             re.search(
                 r"(^test_.*\.py$|_test\.py$|_tests?\.rs$|_tests?\.(cpp|cc|cxx)$"
-                r"|tests?\.(cs|kt|java)$|spec\.(cs|kt|java)$)",
+                r"|tests?\.(cs|kt|java|swift)$|spec\.(cs|kt|java)$"
+                r"|_test\.dart$|_test\.go$|\.test\.(ts|tsx)$|\.spec\.ts$)",
                 low_name,
             )
             or low_rel.startswith(("tests/", "test/", "src/test/"))
             or "/tests/" in low_rel
+            or "/test/" in low_rel
         )
 
         if is_ui_test:
@@ -123,15 +136,44 @@ def _scan_desktop_inventory(project_root: Path) -> Dict[str, List[str]]:
             unit_tests.append(rel)
             continue
 
-        if ext in PACKAGING_EXTS or low_name in ("info.plist", "package.appxmanifest") or low_rel.startswith(".github/workflows/"):
+        if (
+            ext in PACKAGING_EXTS
+            or low_name in (
+                "info.plist",
+                "package.appxmanifest",
+                "tauri.conf.json",
+                "wails.json",
+                "package.swift",
+                "exportoptions.plist",
+            )
+            or low_name.startswith(("electron-builder.", "forge.config."))
+            or low_rel.startswith(".github/workflows/")
+        ):
             packaging_ci.append(rel)
 
         if ext in DB_EXTS or "/migrations/" in low_rel or low_rel.startswith("migrations/") or any(
-            k in low_name for k in ("repository", "dbcontext", "sqlite", "migration", "dao", "keyring")
+            k in low_name
+            for k in (
+                "repository",
+                "dbcontext",
+                "sqlite",
+                "migration",
+                "dao",
+                "keyring",
+                "drift",
+                "sqflite",
+                "better-sqlite",
+                "better_sqlite",
+                "sqlx",
+                "rusqlite",
+                "grdb",
+                "swiftdata",
+            )
         ):
             local_persistence.append(rel)
 
-        if any(k in low_name for k in ("viewmodel", "presenter", "controller")) and ext in (
+        is_stateholder = any(k in low_name for k in STATEHOLDER_KEYWORDS)
+        if is_stateholder and ext in (
             ".cs",
             ".py",
             ".kt",
@@ -140,13 +182,41 @@ def _scan_desktop_inventory(project_root: Path) -> Dict[str, List[str]]:
             ".cpp",
             ".h",
             ".hpp",
+            ".ts",
+            ".tsx",
+            ".go",
+            ".dart",
+            ".swift",
         ):
             viewmodels_presenters.append(rel)
 
-        if ext in VIEW_EXTS or (
-            any(k in low_name for k in ("window", "dialog", "view"))
-            and "viewmodel" not in low_name
-            and ext in (".cs", ".py", ".kt", ".java", ".rs", ".cpp", ".h", ".hpp")
+        in_ui_dir = (
+            low_rel.startswith(("lib/ui/", "sources/views/", "frontend/src/", "src/renderer/", "src/components/"))
+            or any(seg in low_rel for seg in ("/lib/ui/", "/sources/views/", "/frontend/src/", "/src/renderer/", "/src/components/"))
+        )
+        if (
+            ext in VIEW_EXTS
+            or (ext in WEB_VIEW_EXTS and not is_stateholder)
+            or low_name.endswith(("_page.dart", "_screen.dart"))
+            or (
+                in_ui_dir
+                and not is_stateholder
+                and ext in (".dart", ".swift", ".ts", ".tsx", ".js", ".jsx", ".svelte", ".vue", ".html")
+            )
+            or (
+                ext == ".swift"
+                and not is_stateholder
+                and (
+                    any(k in low_name for k in ("window", "dialog", "view", "screen", "page"))
+                    or low_rel.startswith("sources/views/")
+                    or "/sources/views/" in low_rel
+                )
+            )
+            or (
+                any(k in low_name for k in ("window", "dialog", "view"))
+                and not is_stateholder
+                and ext in (".cs", ".py", ".kt", ".java", ".rs", ".cpp", ".h", ".hpp", ".dart")
+            )
         ):
             views_and_windows.append(rel)
 
@@ -157,6 +227,18 @@ def _scan_desktop_inventory(project_root: Path) -> Dict[str, List[str]]:
                 clean_mod = re.sub(r"[^a-z0-9_-]", "", parts[mod_idx + 1].lower())
                 if clean_mod and clean_mod not in GENERIC_DESKTOP_FOLDERS and len(clean_mod) >= 2:
                     candidate_modules.add(clean_mod)
+        elif len(parts) >= 4 and parts[0].lower() == "src-tauri" and parts[1].lower() == "src":
+            clean_mod = re.sub(r"[^a-z0-9_-]", "", parts[2].lower())
+            if clean_mod and clean_mod not in GENERIC_DESKTOP_FOLDERS and len(clean_mod) >= 2:
+                candidate_modules.add(clean_mod)
+        elif len(parts) >= 3 and parts[0].lower() == "internal":
+            clean_mod = re.sub(r"[^a-z0-9_-]", "", parts[1].lower())
+            if clean_mod and clean_mod not in GENERIC_DESKTOP_FOLDERS and len(clean_mod) >= 2:
+                candidate_modules.add(clean_mod)
+        elif len(parts) >= 4 and parts[0].lower() == "src" and parts[1].lower() == "main":
+            clean_mod = re.sub(r"[^a-z0-9_-]", "", parts[2].lower())
+            if clean_mod and clean_mod not in GENERIC_DESKTOP_FOLDERS and len(clean_mod) >= 2:
+                candidate_modules.add(clean_mod)
         elif ext == ".csproj" and len(parts) >= 2 and parts[0].lower() in ("src", "modules"):
             clean_mod = re.sub(r"[^a-z0-9_-]", "", path.stem.lower())
             if clean_mod and clean_mod not in GENERIC_DESKTOP_FOLDERS and "test" not in clean_mod:
@@ -184,7 +266,11 @@ def _scan_legacy_docs(project_root: Path) -> List[Dict[str, str]]:
     for path in project_root.rglob("*"):
         if any(part in SKIP_DIRS for part in path.parts) or not path.is_file():
             continue
-        if path.suffix.lower() in (VIEW_EXTS | {".cs", ".py", ".kt", ".java", ".rs", ".cpp"}):
+        if path.suffix.lower() in (
+            VIEW_EXTS
+            | WEB_VIEW_EXTS
+            | {".cs", ".py", ".kt", ".java", ".rs", ".cpp", ".ts", ".tsx", ".js", ".jsx", ".go", ".dart", ".swift"}
+        ):
             try:
                 latest_src_mtime = max(latest_src_mtime, path.stat().st_mtime)
             except Exception:
