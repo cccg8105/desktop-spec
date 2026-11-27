@@ -71,6 +71,19 @@ STRICT_TOKEN_UI_EXTS = {
     ".py",
     ".cs",
     ".rs",
+    ".tsx",
+    ".jsx",
+    ".ts",
+    ".js",
+    ".css",
+    ".scss",
+    ".dart",
+    ".swift",
+}
+
+ROOT_NON_SOURCE_FILES = {
+    "setup.py",
+    "build.rs",
 }
 
 STRICT_TOKEN_SKIP_DIRS = {
@@ -164,7 +177,9 @@ def _is_source_code_path(rel_posix: str) -> bool:
         return False
     p = Path(rel_posix)
     if len(p.parts) == 1:
-        return False
+        low_name = p.name.lower()
+        if low_name in ROOT_NON_SOURCE_FILES or ".config." in low_name:
+            return False
     return p.suffix.lower() in DESKTOP_SOURCE_EXTENSIONS
 
 
@@ -182,6 +197,10 @@ def scan_burned_hex_tokens(project_root: Path) -> List[str]:
         "ui",
         "views",
         "Resources",
+        "lib",
+        "Sources",
+        "frontend",
+        "src/renderer",
     ]
     scan_roots: List[str] = []
     for r in candidate_roots:
@@ -206,7 +225,8 @@ def scan_burned_hex_tokens(project_root: Path) -> List[str]:
                 low_name.startswith(("tokens", "theme", "colors", "palette"))
                 or "theme" in low_name
                 or "tokens" in low_name
-                or low_name.endswith(".tokens.json")
+                or low_name.endswith((".tokens.json", ".config.js", ".config.ts", ".config.mjs"))
+                or low_name.startswith(("tailwind.config.", "vite.config."))
                 or re.search(r"(\.|_)(test|spec|tests)\.[a-z]+$", low_name)
                 or low_name.startswith("test_")
             ):
@@ -264,7 +284,6 @@ def _verify_staged_commits(
         return
 
     changelog_staged = "docs/backlog/changelog.md" in staged_files
-    docs_staged = any(f.startswith("docs/") for f in staged_files)
     if changelog_staged:
         return
 
@@ -277,7 +296,7 @@ def _verify_staged_commits(
         return
 
     undeclared = [f for f in staged_source if f not in declared_artifacts]
-    if undeclared and not docs_staged:
+    if undeclared:
         errors.append(
             "Violacion de fronteras (Commit fantasma parcial): los archivos en stage "
             f"({', '.join(undeclared[:5])}) no figuran en las 'Fronteras y Artefactos' de ningun "
@@ -389,6 +408,16 @@ def _validate_functional_docs(
                 )
 
 
+def _contains_placeholder(val: object) -> bool:
+    if isinstance(val, str):
+        return "{{" in val
+    if isinstance(val, list):
+        return any(_contains_placeholder(item) for item in val)
+    if isinstance(val, dict):
+        return any(_contains_placeholder(v) for v in val.values())
+    return False
+
+
 def _validate_design_and_technical_docs(
     docs_dir: Path, errors: List[str], warnings: List[str]
 ) -> None:
@@ -413,20 +442,28 @@ def _validate_design_and_technical_docs(
             )
         if tokens_schema:
             props = tokens_schema.get("properties", {})
-            if tok_info["theme_modes"] and "theme_modes" in props:
-                errors.extend(
-                    validate_against_schema(
-                        tok_info["theme_modes"],
-                        props["theme_modes"],
-                        path="tokens-and-themes.md#theme_modes",
+            for key in ("theme_modes", "density_modes", "window_chrome", "semantic_colors"):
+                val = tok_info.get(key)
+                if val and key in props and not _contains_placeholder(val):
+                    errors.extend(
+                        validate_against_schema(
+                            val,
+                            props[key],
+                            path=f"tokens-and-themes.md#{key}",
+                        )
                     )
-                )
-            if tok_info["semantic_colors"] and "semantic_colors" in props:
+            typo = tok_info.get("typography")
+            if (
+                isinstance(typo, dict)
+                and any(str(v).strip() for v in typo.values())
+                and "typography" in props
+                and not _contains_placeholder(typo)
+            ):
                 errors.extend(
                     validate_against_schema(
-                        tok_info["semantic_colors"],
-                        props["semantic_colors"],
-                        path="tokens-and-themes.md#semantic_colors",
+                        typo,
+                        props["typography"],
+                        path="tokens-and-themes.md#typography",
                     )
                 )
 
@@ -439,28 +476,34 @@ def _validate_design_and_technical_docs(
     _check_markdown_links(tech_index, errors)
     tech_index_content = tech_index.read_text(encoding="utf-8")
 
-    for filename, expected_art_type, schema_rel, scalar_key in EXPECTED_TECHNICAL_DOCS:
+    for filename, expected_art_type, schema_rel, _ in EXPECTED_TECHNICAL_DOCS:
         tf_path = tech_dir / filename
         if not tf_path.exists():
             errors.append(f"Falta el documento tecnico obligatorio: docs/technical/{filename}")
             continue
 
         _check_markdown_links(tf_path, errors)
-        fm, _, has_fm = parse_yaml_frontmatter(tf_path.read_text(encoding="utf-8"))
+        fm, body, has_fm = parse_yaml_frontmatter(tf_path.read_text(encoding="utf-8"))
         if not has_fm or fm.get("artifact_type") != expected_art_type:
             warnings.append(
                 f"Documento '{filename}': se recomienda frontmatter 'artifact_type: {expected_art_type}'"
             )
 
+        if not re.search(r"^##\s+\S", body, re.MULTILINE):
+            errors.append(
+                f"Documento tecnico '{filename}': debe incluir al menos un encabezado Markdown '##' en su cuerpo"
+            )
+
         schema = load_json_schema(schema_rel)
         if schema:
             props = schema.get("properties", {})
-            if scalar_key in fm and scalar_key in props and "{{" not in str(fm[scalar_key]):
-                errors.extend(
-                    validate_against_schema(
-                        fm[scalar_key], props[scalar_key], path=f"{filename}#{scalar_key}"
+            for fm_key, fm_val in fm.items():
+                if fm_key in props and not _contains_placeholder(fm_val):
+                    errors.extend(
+                        validate_against_schema(
+                            fm_val, props[fm_key], path=f"{filename}#{fm_key}"
+                        )
                     )
-                )
 
         if filename not in tech_index_content:
             warnings.append(f"El documento tecnico '{filename}' no figura en docs/technical/index.md")
